@@ -21,17 +21,36 @@ from version import APP_VERSION
 
 
 def _ensure_std_streams() -> None:
-    """--windowed(PyInstaller) 빌드에서는 sys.stdout/stderr 가 None 이라 print 가 예외로 죽는다.
-    그 예외가 창 모드에서 오류 대화상자로 떠서 자동 검증이 멈추므로, 리다이렉트된 fd 가
-    있으면 그대로 쓰고 없으면 devnull 로 채운다."""
+    """--windowed(PyInstaller) 빌드의 표준 출력을 안전하게 만든다.
+
+    창 모드에서 sys.stdout/stderr 가 None 이면 print 가 예외로 죽고, 리다이렉트된 파일은
+    로케일 인코딩(cp1252 등)이라 한글 출력에서 UnicodeEncodeError 가 난다. 어느 경우든
+    그 예외가 창 모드 오류 대화상자로 떠서 자동 검증이 멈춘다. UTF-8 로 맞춰 둔다.
+    """
     for name, fd in (("stdout", 1), ("stderr", 2)):
-        if getattr(sys, name) is not None:
-            continue
-        try:
-            stream = open(fd, "w", encoding="utf-8", errors="replace", closefd=False)
-        except OSError:
-            stream = open(os.devnull, "w", encoding="utf-8")
+        stream = getattr(sys, name)
+        if stream is None:
+            try:
+                stream = open(fd, "w", encoding="utf-8", errors="replace", closefd=False)
+            except OSError:
+                stream = open(os.devnull, "w", encoding="utf-8")
+        else:
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (AttributeError, ValueError, OSError):
+                try:
+                    stream = open(fd, "w", encoding="utf-8", errors="replace", closefd=False)
+                except OSError:
+                    pass
         setattr(sys, name, stream)
+
+
+def _say(text: str) -> None:
+    """출력 실패가 검증 자체를 막지 않게 한다."""
+    try:
+        print(text)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 _ensure_std_streams()
@@ -412,10 +431,10 @@ def selftest(strict: bool = False) -> int:
         webview_note = f"{type(exc).__name__}: {exc}"
 
     for name, passed in checks.items():
-        print(f"  [{'OK' if passed else 'FAIL'}] {name}")
-    print(f"  [{'OK' if webview_ok else 'FAIL'}] pywebview {webview_note}")
-    print("  version:", APP_VERSION, "| state:", state_path())
-    print("selftest:", "OK" if ok and (webview_ok or not strict) else "FAIL")
+        _say(f"  [{'OK' if passed else 'FAIL'}] {name}")
+    _say(f"  [{'OK' if webview_ok else 'FAIL'}] pywebview {webview_note}")
+    _say(f"  version: {APP_VERSION} | state: {state_path()}")
+    _say("selftest: " + ("OK" if ok and (webview_ok or not strict) else "FAIL"))
     return 0 if ok and (webview_ok or not strict) else 1
 
 
