@@ -154,7 +154,10 @@
     margin:8px 0 4px; font-size:29px; font-weight:800; line-height:1.1; letter-spacing:-.035em;
     font-variant-numeric:tabular-nums;
   }
+  /* 환불 탭 최종 금액은 마이너스(-123,456원)도 한 줄에 단정하게 들어가도록 조금 작게 */
+  .is-refund .big{font-size:23px; letter-spacing:-.03em;}
   .big.is-empty{color:#C9CCD6;}
+  .big.is-negative{color:#DC2626;}
   .sub{margin:3px 0 0; font-size:9.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .sub:empty{display:none;}
   .sub.is-error{color:var(--danger);}
@@ -430,8 +433,10 @@
     const deduction = used * perSession;
     const raw = paid - penalty - deduction;
     const refundable = raw > 0;
-    const refund = refundable ? raw : 0;
-    const refundText = refundable ? won(refund) : "0원 (환불 불가)";
+    const isNegative = raw < 0;
+    const refund = raw;
+    // 0원 미만은 그 마이너스 금액을 그대로 보여 준다(화면은 빨간 -22,000원).
+    const refundText = isNegative ? "-" + won(Math.abs(raw)) : won(raw);
     const label = payload.label || "";
     const lines = [label ? "[환불 내역] " + label : "[환불 내역]"];
     lines.push("결제금액 " + won(paid));
@@ -446,6 +451,7 @@
       usage_deduction: deduction, usage_text: won(deduction),
       usage_detail: used + "회 × " + won(perSession),
       refund: refund, refund_text: refundText, refundable: refundable,
+      is_negative: isNegative,
       remaining_sessions: null,
       receipt_text: lines.join("\n"),
     };
@@ -603,6 +609,7 @@
   function setBig(text, opts) {
     bigEl.textContent = text;
     bigEl.classList.toggle("is-empty", !!(opts && opts.empty));
+    bigEl.classList.toggle("is-negative", !!(opts && opts.negative));
   }
 
   function setSub(text, isError) {
@@ -692,8 +699,8 @@
       receiptText = "";
       return;
     }
-    setBig(out.refund_text, {});
-    setSub(out.refundable ? "" : "차감 합계가 결제금액을 넘어 환불금액이 없습니다");
+    setBig(out.refund_text, {negative: !!out.is_negative});
+    setSub("");
     refundFacts(out, used, rate);
     receiptText = out.receipt_text;
     copyBtn.disabled = false;

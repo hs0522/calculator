@@ -112,5 +112,50 @@ class TestJsBridge(unittest.TestCase):
         self.assertIn('if (isHttpPreview()) {', html)
 
 
+class TestRefundNegativeDisplay(unittest.TestCase):
+    """v1.0.4: 환불 불가를 `0원 (환불 불가)` 대신 빨간 `-금액원` 으로 보여 준다."""
+
+    def test_old_placeholder_is_gone(self):
+        html = read_web()
+        self.assertNotIn("0원 (환불 불가)", html)
+        self.assertNotIn("환불금액이 없습니다", html)
+
+    def test_js_formats_negative_amount(self):
+        html = read_web()
+        self.assertIn("const isNegative = raw < 0;", html)
+        self.assertIn('const refundText = isNegative ? "-" + won(Math.abs(raw)) : won(raw);', html)
+        self.assertIn("is_negative: isNegative,", html)
+
+    def test_big_amount_turns_red(self):
+        html = read_web()
+        self.assertIn(".big.is-negative{color:#DC2626;}", html)
+        self.assertIn('bigEl.classList.toggle("is-negative", !!(opts && opts.negative));', html)
+        self.assertIn("setBig(out.refund_text, {negative: !!out.is_negative});", html)
+
+    def test_big_font_is_smaller_on_refund_tab(self):
+        html = read_web()
+        match = re.search(r"\.is-refund \.big\{font-size:(\d+)px;", html)
+        self.assertIsNotNone(match, "환불 탭 금액 글자 크기 규칙이 없습니다")
+        size = int(match.group(1))
+        self.assertGreaterEqual(size, 22)
+        self.assertLessEqual(size, 24)
+
+    def test_python_and_js_show_the_same_text(self):
+        """같은 입력에 파이썬과 화면 내장 계산이 같은 표기를 내도록 기대값을 고정한다."""
+        html = read_web()
+        # JS 금액 표기(쉼표 + 원)가 파이썬 format_won 과 같은 모양인지 확인한다.
+        self.assertIn('Number(n).toLocaleString("ko-KR") + "원"', html)
+        for paid, used, rate, expected in (
+            (264_000, 5, 22_000, "127,600원"),
+            (264_000, 12, 22_000, "-26,400원"),
+            (100_000, 5, 22_000, "-20,000원"),
+            (220_000, 9, 22_000, "0원"),
+            (750_000, 10, 77_000, "-95,000원"),
+        ):
+            out = calculator.build_refund_result(str(paid), used, rate)
+            self.assertEqual(out["refund_text"], expected)
+            self.assertEqual(out["is_negative"], expected.startswith("-"))
+
+
 if __name__ == "__main__":
     unittest.main()

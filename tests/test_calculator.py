@@ -121,20 +121,26 @@ class TestRefund(unittest.TestCase):
         self.assertEqual(r.usage_deduction, 231_000)
         self.assertEqual(r.refund, 444_000)
 
-    def test_all_sessions_used_is_zero(self):
+    def test_all_sessions_used_is_negative(self):
+        # 결제 264,000 - 위약금 26,400 - 사용 264,000 = -26,400
         r = c.calculate_refund(264_000, 12, 22_000, 12)
-        self.assertEqual(r.refund, 0)
+        self.assertEqual(r.refund, -26_400)
         self.assertFalse(r.refundable)
+        self.assertTrue(r.is_negative)
 
     def test_negative_floor(self):
+        # 100,000 - 10,000 - 110,000 = -20,000
         r = c.calculate_refund(100_000, 5, 22_000, 12)
-        self.assertEqual(r.refund, 0)
+        self.assertEqual(r.refund, -20_000)
         self.assertFalse(r.refundable)
+        self.assertTrue(r.is_negative)
 
     def test_exact_zero(self):
-        r = c.calculate_refund(237_600, 10, 22_000, 12)
+        # 220,000 - 22,000 - (9 x 22,000) = 0. 0원은 0원으로 두고 음수 표시는 하지 않는다.
+        r = c.calculate_refund(220_000, 9, 22_000, 12)
         self.assertEqual(r.refund, 0)
         self.assertFalse(r.refundable)
+        self.assertFalse(r.is_negative)
 
     def test_penalty_floor(self):
         # 123,456 * 10% = 12,345.6 -> 12,345 (절사)
@@ -219,10 +225,30 @@ class TestBuilders(unittest.TestCase):
         self.assertEqual(out["usage_detail"], "5회 × 22,000원")
         self.assertIn("[환불 내역] 6:1 그룹 12회", out["receipt_text"])
 
-    def test_refund_payload_not_refundable(self):
+    def test_refund_payload_not_refundable_is_negative(self):
+        # 100,000 - 10,000 - (5 x 22,000) = -20,000 → 빨간 마이너스 표기를 위한 값
         out = c.build_refund_result("100,000", 5, 22_000, 12)
         self.assertFalse(out["refundable"])
-        self.assertEqual(out["refund_text"], "0원 (환불 불가)")
+        self.assertTrue(out["is_negative"])
+        self.assertEqual(out["refund"], -20_000)
+        self.assertEqual(out["refund_text"], "-20,000원")
+        self.assertNotIn("환불 불가", out["receipt_text"])
+        self.assertIn("최종 환불금액 -20,000원", out["receipt_text"])
+
+    def test_refund_payload_exact_zero(self):
+        # 220,000 - 22,000 - (9 x 22,000) = 0 → '0원' (음수 아님)
+        out = c.build_refund_result("220,000", 9, 22_000, 12)
+        self.assertFalse(out["refundable"])
+        self.assertFalse(out["is_negative"])
+        self.assertEqual(out["refund"], 0)
+        self.assertEqual(out["refund_text"], "0원")
+
+    def test_refund_payload_personal_negative(self):
+        # 750,000 - 75,000 - (10 x 77,000) = -95,000
+        out = c.build_refund_result("750,000", 10, 77_000, 15)
+        self.assertFalse(out["refundable"])
+        self.assertTrue(out["is_negative"])
+        self.assertEqual(out["refund_text"], "-95,000원")
 
     def test_refund_payload_zero_paid(self):
         with self.assertRaises(c.CalcError):

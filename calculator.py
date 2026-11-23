@@ -123,9 +123,10 @@ class RefundResult:
     paid: int
     penalty: int
     usage_deduction: int
-    refund: int
+    refund: int  # 위약금·사용 차감을 뺀 그대로의 금액(0원 미만이면 음수)
     refundable: bool
     remaining_sessions: int | None
+    is_negative: bool = False
 
 
 def calculate_refund(
@@ -136,7 +137,8 @@ def calculate_refund(
 ) -> RefundResult:
     """환불금액 = 결제금액 - 위약금(10%) - (사용횟수 x 회당 차감액).
 
-    위약금의 원 미만은 절사한다. 결과가 0원 미만이면 0원, 환불 불가.
+    위약금의 원 미만은 절사한다. 결과가 0원 미만이면 그 마이너스 금액을 그대로
+    돌려주고(화면에는 빨간 `-22,000원`) 환불 불가로 본다. 0원이면 0원, 환불 불가.
     """
     if isinstance(paid, bool) or not isinstance(paid, int):
         raise CalcError("결제금액은 숫자여야 합니다.")
@@ -159,15 +161,15 @@ def calculate_refund(
     )
     deduction = used * per_session
     raw = paid - penalty - deduction
-    refund = raw if raw > 0 else 0
     remaining = None if sessions is None else sessions - used
     return RefundResult(
         paid=paid,
         penalty=penalty,
         usage_deduction=deduction,
-        refund=refund,
+        refund=raw,
         refundable=raw > 0,
         remaining_sessions=remaining,
+        is_negative=raw < 0,
     )
 
 
@@ -270,9 +272,10 @@ def build_refund_result(
 
     result = calculate_refund(paid, used, per_session, sessions)
 
-    refund_text = format_won(result.refund)
-    if not result.refundable:
-        refund_text = "0원 (환불 불가)"
+    if result.is_negative:
+        refund_text = f"-{format_won(abs(result.refund))}"
+    else:
+        refund_text = format_won(result.refund)
 
     lines = []
     if label:
@@ -299,6 +302,7 @@ def build_refund_result(
         "refund": result.refund,
         "refund_text": refund_text,
         "refundable": result.refundable,
+        "is_negative": result.is_negative,
         "remaining_sessions": result.remaining_sessions,
         "receipt_text": "\n".join(lines),
     }
