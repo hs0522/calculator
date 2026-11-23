@@ -201,15 +201,24 @@ class Widget:
         self.y = state.get("y")
 
     # 창 위치 기억 -----------------------------------------------------
-    def remember_geometry(self, *_args) -> None:
+    def on_moved(self, *args) -> None:
+        """창을 옴기면 위치를 저장한다."""
+        if len(args) >= 2 and all(isinstance(v, int) for v in args[:2]):
+            self.x, self.y = int(args[0]), int(args[1])
+            save_state(x=self.x, y=self.y)
+
+    def on_closing(self, *_args) -> None:
+        """닫기 직전 위치를 한 번 더 저장한다."""
         window = self.window
         if window is None:
             return
         try:
-            self.x, self.y = window.x, window.y
-            save_state(x=self.x, y=self.y)
+            x, y = window.x, window.y
         except Exception:
-            pass
+            return
+        if isinstance(x, int) and isinstance(y, int):
+            self.x, self.y = x, y
+            save_state(x=x, y=y)
 
     def apply_on_top(self, value: bool) -> bool:
         self.always_on_top = bool(value)
@@ -242,13 +251,18 @@ class Widget:
             WINDOW_TITLE, resource_path("web", "index.html"), **kwargs
         )
 
-        for name in ("moved", "resized", "closing"):
-            event = getattr(self.window.events, name, None)
-            if event is not None:
-                try:
-                    event += self.remember_geometry
-                except Exception:
-                    pass
+        moved = getattr(self.window.events, "moved", None)
+        if moved is not None:
+            try:
+                moved += self.on_moved
+            except Exception:
+                pass
+        closing = getattr(self.window.events, "closing", None)
+        if closing is not None:
+            try:
+                closing += self.on_closing
+            except Exception:
+                pass
         return self.window
 
     def run(self) -> None:
