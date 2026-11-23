@@ -1,8 +1,9 @@
 # 필라테스 계산기
 
-필라테스 센터 데스크에서 쓰는 윈도우 프로그램입니다. **회원권 만료일**과 **환불금액**을 한 화면에서 계산합니다.
+필라테스 센터 데스크에 띄워 두는 **미니 위젯**(윈도우 데스크톱 앱)입니다. 회원권 **만료일**과 **환불금액**을
+작은 창에서 바로 계산합니다.
 
-![미리보기](docs/preview.png)
+![만료일 위젯](docs/preview.png) ![환불 위젯](docs/preview-refund.png)
 
 ## 받는 곳
 
@@ -14,6 +15,13 @@
 윈도우 11에는 필요한 **WebView2 런타임**이 기본 탑재되어 있습니다. 윈도우 10에서 창이 비어 있으면
 [WebView2 런타임](https://developer.microsoft.com/microsoft-edge/webview2/)을 설치해 주세요.
 
+## 위젯 사용
+
+- 기본 크기 **380 × 560** 의 작은 창입니다. 테두리 없는 창이라 상단 제목 부분을 잡고 옮깁니다.
+- 상단 오른쪽 `📌` **항상 위 고정** 토글, `—` 최소화, `✕` 닫기.
+- 창을 옮긴 위치와 `📌` 상태는 `%APPDATA%\PilatesCalc\state.json` 에 저장되어 다시 열 때 그대로 복원됩니다.
+- 새 버전이 릴리즈되면 제목 옆에 **업데이트** 버튼이 나타나 Releases 페이지를 엽니다.
+
 ## 기능
 
 ### 만료일
@@ -21,7 +29,7 @@
 - **시작일 포함** 기준입니다.
   - `N개월`: 시작일 + N개월(해당 월 말일 보정) - 1일 → `2026-11-23` + 2개월 = `2027-01-22`
   - `N주`: 시작일 + (N × 7 - 1)일 → `2026-11-23` + 10주 = `2027-01-31`
-- 결과: 시작일, 총 이용일수, 만료일(요일). `안내 문구 복사` 버튼으로 회원에게 보낼 문구를 복사합니다.
+- 결과: 만료일과 요일, 시작일, 기간, 총 이용일수. `안내 문구 복사` 버튼으로 회원에게 보낼 문구를 복사합니다.
 
 ### 환불금액
 - 공식: `결제금액 - 위약금(결제금액의 10%) - (사용횟수 × 회당 차감액)`
@@ -48,17 +56,29 @@
 ## 구조
 
 ```
-app.py                 윈도우 창(pywebview) + JS 브리지 + 클립보드 + --selftest
+app.py                 위젯 창(pywebview, frameless) · 창/위치 저장 · 업데이트 확인 · --selftest
 calculator.py          계산 코어 (순수 파이썬, UI 없음)
-web/index.html         화면 (라이트 톤, 탭 2개)
+version.py             APP_VERSION (릴리즈 빌드 때 워크플로우가 덮어씀)
+web/index.html         380px 1열 위젯 UI
 dev_server.py          브라우저에서 화면만 미리 볼 때 쓰는 로컬 서버 (개발용)
 tests/test_calculator.py  unittest 48건
 installer/pilatescalc.iss Inno Setup 설치 스크립트
-.github/workflows/release.yml  태그 푸시 시 exe/설치본/ZIP 자동 릴리즈
+ci/release.yml         릴리즈 워크플로우 원본 (→ .github/workflows/release.yml)
+.github/workflows/release.yml  GitHub Actions (태그 푸시 시 exe·설치본·ZIP 자동 릴리즈)
 ```
 
 계산 로직은 `calculator.py` 한 곳에만 있습니다. 화면은 `window.pywebview.api`(앱 실행 시) 또는 `/api/*`(개발 서버)로
-같은 함수를 호출하므로, 화면과 코어의 결과가 갈라지지 않습니다.
+같은 함수를 호출하므로 화면과 코어의 결과가 갈라지지 않습니다.
+
+## 업데이트 확인
+
+앱이 `https://api.github.com/repos/hs0522/calculator/releases/latest` 를 확인해 지금 버전보다 새 태그가 있을 때만
+`업데이트` 버튼을 보여 줍니다. 저장소가 **비공개**라면 GitHub API 인증이 필요합니다. 그때는
+`%APPDATA%\PilatesCalc\config.json` 에 읽기 권한 토큰을 두면 동작합니다.
+
+```json
+{ "github_token": "github_pat_..." }
+```
 
 ## 개발
 
@@ -66,7 +86,7 @@ installer/pilatescalc.iss Inno Setup 설치 스크립트
 pip install -r requirements.txt
 python -m unittest discover -s tests -v
 
-# 화면만 브라우저로 확인
+# 화면만 브라우저로 확인 (380x560 창으로 열기)
 python dev_server.py        # http://127.0.0.1:8765/
 
 # 앱 실행 (윈도우)
@@ -78,7 +98,7 @@ python app.py --selftest
 
 ## 배포
 
-`main`에 푸시한 뒤 태그를 올리면 GitHub Actions(윈도우 러너)가 테스트 → PyInstaller 빌드 →
+`main`에 푸시한 뒤 태그를 올리면 GitHub Actions(윈도우 러너)가 테스트 → 버전 스탬프 → PyInstaller 빌드 →
 패키지 셀프 테스트 → Inno Setup 설치본 → 포터블 ZIP → Release 업로드까지 자동으로 처리합니다.
 
 ```bash

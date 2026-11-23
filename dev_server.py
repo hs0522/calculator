@@ -6,8 +6,18 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import calculator  # noqa: E402
+from version import APP_VERSION  # noqa: E402
 
 WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+REPO = "hs0522/calculator"
+WINDOW_ACTIONS = {
+    "/api/minimize",
+    "/api/close",
+    "/api/set_on_top",
+    "/api/open_release",
+    "/api/get_window_state",
+    "/api/copy",
+}
 
 
 def presets_payload():
@@ -32,6 +42,19 @@ def handle_api(path, payload):
     try:
         if path == "/api/presets":
             return {"ok": True, "presets": presets_payload()}
+        if path == "/api/version":
+            return {"ok": True, "version": APP_VERSION, "repo": REPO}
+        if path == "/api/check_update":
+            forced = os.environ.get("PILATES_PREVIEW_UPDATE") == "1"
+            return {
+                "ok": True,
+                "current": APP_VERSION,
+                "latest": "1.0.1" if forced else APP_VERSION,
+                "available": forced,
+                "url": f"https://github.com/{REPO}/releases/latest",
+            }
+        if path in WINDOW_ACTIONS:
+            return {"ok": True, "always_on_top": True}
         if path == "/api/date_calc":
             return calculator.build_expiry_result(
                 payload.get("start"),
@@ -61,15 +84,8 @@ class Handler(SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):  # 조용히
         pass
 
-    def do_POST(self):
-        length = int(self.headers.get("Content-Length") or 0)
-        raw = self.rfile.read(length).decode("utf-8") if length else "{}"
-        try:
-            payload = json.loads(raw or "{}")
-        except json.JSONDecodeError:
-            payload = {}
-        result = handle_api(self.path, payload)
-        body = json.dumps(result, ensure_ascii=False).encode("utf-8")
+    def _json(self, payload):
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -77,14 +93,18 @@ class Handler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_POST(self):
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(length).decode("utf-8") if length else "{}"
+        try:
+            payload = json.loads(raw or "{}")
+        except json.JSONDecodeError:
+            payload = {}
+        self._json(handle_api(self.path, payload))
+
     def do_GET(self):
-        if self.path.startswith("/api/presets"):
-            body = json.dumps(handle_api("/api/presets", {}), ensure_ascii=False).encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
+        if self.path.startswith("/api/"):
+            self._json(handle_api(self.path.split("?")[0], {}))
             return
         if self.path in ("/", ""):
             self.path = "/index.html"

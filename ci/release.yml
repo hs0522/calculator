@@ -57,6 +57,13 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
+      - name: Stamp version
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          "APP_VERSION = `"$v`"" | Set-Content -Path "version.py" -Encoding utf8 -NoNewline
+          Get-Content "version.py"
+
       - name: Check pywebview import
         run: python -c "import sys, webview; print('pywebview', webview.__version__, '| python', sys.version)"
 
