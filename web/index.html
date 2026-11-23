@@ -111,6 +111,38 @@
   .ghost:hover{background:#E8EAF2; color:var(--ink);}
   .duo{display:grid; grid-template-columns:1.35fr 1fr; gap:6px;}
 
+  /* ---------- 만료일 탭: 종류별 기간 스테퍼 ---------- */
+  .rows{display:grid; gap:7px;}
+  .mrow{
+    border:1px solid #E7E9F0; background:#FAFBFD; border-radius:12px; padding:7px 9px 8px;
+    display:grid; gap:6px; transition:border-color .12s,background .12s,box-shadow .12s;
+  }
+  .mrow.is-active{border-color:var(--accent); background:var(--accent-tint); box-shadow:0 1px 3px rgba(91,95,233,.16);}
+  .mrow-head{display:flex; align-items:center; gap:6px; min-width:0;}
+  .mkind{font-size:10.5px; font-weight:700; color:#4A4E5A; letter-spacing:-.01em; white-space:nowrap;}
+  .mrow.is-active .mkind{color:var(--accent-dark);}
+  .chips{display:flex; gap:4px; margin-left:auto;}
+  .chip{
+    border:1px solid #E3E6EE; background:#fff; border-radius:999px; padding:2px 8px; font:inherit;
+    font-size:10px; font-weight:600; color:#5A5F6E; cursor:pointer; font-variant-numeric:tabular-nums;
+    transition:border-color .12s,color .12s;
+  }
+  .chip:hover{border-color:#CFD2E0; color:var(--ink);}
+  .chip.is-active{border-color:var(--accent); color:var(--accent-dark); font-weight:700;}
+  .stepper{display:flex; align-items:center; gap:6px;}
+  .step{
+    width:30px; height:30px; flex:0 0 30px; border:1px solid #E3E6EE; background:#fff; border-radius:10px;
+    font:inherit; font-size:15px; font-weight:600; color:#4A4E5A; line-height:1; padding:0;
+    cursor:pointer; display:grid; place-items:center; transition:background .12s,border-color .12s,color .12s;
+  }
+  .step:hover{background:#F2F3FA; border-color:#CFD2E0; color:var(--ink);}
+  .step:disabled{color:#C9CCD6; cursor:default; background:#F7F8FC; border-color:#EDEFF5;}
+  .stepnum{
+    width:58px; flex:0 0 58px; text-align:center; padding:6px 4px; font-weight:700;
+    background:#fff; font-variant-numeric:tabular-nums;
+  }
+  .stepunit{font-size:10.5px; color:var(--label); margin-left:auto; padding-right:2px;}
+
   /* ---------- 결과 ---------- */
   .result{
     flex:1; min-height:0; background:var(--card); border:1px solid var(--line); border-radius:16px;
@@ -132,6 +164,7 @@
   }
   .kpis::-webkit-scrollbar{width:4px;}
   .kpis::-webkit-scrollbar-thumb{background:#DFE1EA; border-radius:4px;}
+  .kpis.is-single{grid-template-columns:1fr;}
   .kpi{background:#F4F5FB; border-radius:11px; padding:6px 9px; min-width:0;}
   .kpi .k{
     display:block; font-size:9px; font-weight:700; color:var(--accent); line-height:1.3;
@@ -195,13 +228,39 @@
         <span class="card-title">회원권</span>
         <span class="hint" id="rate-note"></span>
       </div>
-      <div class="presets" id="presets-block">
+      <div class="rows" id="date-block">
+        <div class="mrow" data-kind="group">
+          <div class="mrow-head">
+            <span class="mkind">6:1 그룹</span>
+            <div class="chips" id="chips-group"></div>
+          </div>
+          <div class="stepper">
+            <button class="step" type="button" data-kind="group" data-step="-1" aria-label="그룹 기간 줄이기">−</button>
+            <input class="stepnum" id="num-group" data-kind="group" type="number" min="1" step="1" inputmode="numeric" value="2" aria-label="그룹 기간">
+            <button class="step" type="button" data-kind="group" data-step="1" aria-label="그룹 기간 늘리기">+</button>
+            <span class="stepunit">개월</span>
+          </div>
+        </div>
+        <div class="mrow" data-kind="personal">
+          <div class="mrow-head">
+            <span class="mkind">1:1 개인</span>
+            <div class="chips" id="chips-personal"></div>
+          </div>
+          <div class="stepper">
+            <button class="step" type="button" data-kind="personal" data-step="-1" aria-label="개인 기간 줄이기">−</button>
+            <input class="stepnum" id="num-personal" data-kind="personal" type="number" min="1" step="1" inputmode="numeric" value="10" aria-label="개인 기간">
+            <button class="step" type="button" data-kind="personal" data-step="1" aria-label="개인 기간 늘리기">+</button>
+            <span class="stepunit">주</span>
+          </div>
+        </div>
+      </div>
+      <div class="presets" id="presets-block" hidden>
         <p class="lbl sec">6:1 그룹<span id="rate-group-slot" hidden> · 회당 <b id="rate-group">22,000원</b></span></p>
         <div class="pills" id="pills-group"></div>
         <p class="lbl sec" style="margin:8px 0 6px;">1:1 개인<span id="rate-personal-slot" hidden> · 회당 <b id="rate-personal">77,000원</b></span></p>
         <div class="pills three" id="pills-personal"></div>
       </div>
-      <div class="foot">
+      <div class="foot" id="presets-foot" hidden>
         <span class="sel-note" id="sel-note"></span>
         <button class="link" id="custom-toggle" type="button">직접 입력</button>
       </div>
@@ -226,7 +285,6 @@
     <section class="card" id="panel-date">
       <div class="card-head">
         <span class="card-title">시작일</span>
-        <span class="lbl">시작일 포함</span>
       </div>
       <div class="inline">
         <input id="d-start" type="date">
@@ -270,7 +328,8 @@
 
   const $ = (id) => document.getElementById(id);
   const pillsGroup = $("pills-group"), pillsPersonal = $("pills-personal"), selNote = $("sel-note");
-  const presetsBlock = $("presets-block");
+  const chipsGroup = $("chips-group"), chipsPersonal = $("chips-personal");
+  const presetsBlock = $("presets-block"), footEl = $("presets-foot"), dateBlock = $("date-block");
   const labelEl = $("r-label");
   const rateGroup = $("rate-group"), ratePersonal = $("rate-personal");
   const rateGroupSlot = $("rate-group-slot"), ratePersonalSlot = $("rate-personal-slot");
@@ -279,10 +338,21 @@
   const dStart = $("d-start"), rPaid = $("r-paid"), rUsed = $("r-used"), rTotal = $("r-total");
   const bigEl = $("big"), subEl = $("sub"), kpisEl = $("facts"), copyBtn = $("copy"), toastEl = $("toast");
 
+  const KIND_LABEL = {group: "6:1 그룹", personal: "1:1 개인"};
+  const KIND_UNIT = {group: "months", personal: "weeks"};
+  const UNIT_SYMBOL = {months: "개월", weeks: "주"};
+  const kindLabel = (kind) => KIND_LABEL[kind] || "";
+  const unitSymbol = (unit) => UNIT_SYMBOL[unit] || "";
+
   let PRESETS = [];
   let tab = "date";
   let guideText = "", receiptText = "";
-  const state = {kind: "group", presetId: "g12", unit: "months", value: 2, sessions: 12};
+  // 만료일 탭은 종류별 기간 스테퍼 두 줄을 늘 보여 주고, 선택된 종류(state.kind)의 기간으로 만료일을 계산한다.
+  const state = {
+    kind: "group", presetId: "g12", unit: "months", value: 2, sessions: 12, customMode: false,
+    rows: {group: 2, personal: 10},
+    lastSessions: {group: 12, personal: 15},
+  };
 
   const won = (n) => Number(n).toLocaleString("ko-KR") + "원";
   const pad = (n) => String(n).padStart(2, "0");
@@ -307,18 +377,14 @@
   }
 
   function membership() {
-    if (state.presetId) {
-      const p = PRESETS.find((x) => x.id === state.presetId);
-      if (p) {
-        return {label: p.label, unit: p.period_unit, value: p.period_value, sessions: p.sessions,
-                perSession: p.per_session, periodText: p.period_label, price: p.price, kind: p.kind, custom: false};
-      }
-    }
-    const kindLabel = state.kind === "group" ? "6:1 그룹" : "1:1 개인";
-    const unitText = state.unit === "months" ? "개월" : "주";
-    return {label: kindLabel + " 직접 입력", unit: state.unit, value: state.value, sessions: state.sessions,
-            perSession: state.kind === "group" ? GROUP_RATE : PERSONAL_RATE,
-            periodText: state.value + unitText, price: null, kind: state.kind, custom: true};
+    const p = state.presetId ? PRESETS.find((x) => x.id === state.presetId) : null;
+    return {
+      label: p ? p.label : kindLabel(state.kind),
+      unit: state.unit, value: state.value, sessions: state.sessions,
+      perSession: p ? p.per_session : (state.kind === "group" ? GROUP_RATE : PERSONAL_RATE),
+      periodText: state.value + unitSymbol(state.unit), price: p ? p.price : null,
+      kind: state.kind, custom: !p,
+    };
   }
 
   function pillHtml(p) {
@@ -326,18 +392,76 @@
       '" data-id="' + p.id + '">' + p.sessions + "회</button>";
   }
 
+  function chipHtml(p) {
+    return '<button type="button" class="chip' + (state.presetId === p.id ? " is-active" : "") +
+      '" data-id="' + p.id + '">' + p.sessions + "회</button>";
+  }
+
   function renderPresets() {
     pillsGroup.innerHTML = PRESETS.filter((p) => p.kind === "group").map(pillHtml).join("");
     pillsPersonal.innerHTML = PRESETS.filter((p) => p.kind === "personal").map(pillHtml).join("");
+    chipsGroup.innerHTML = PRESETS.filter((p) => p.kind === "group").map(chipHtml).join("");
+    chipsPersonal.innerHTML = PRESETS.filter((p) => p.kind === "personal").map(chipHtml).join("");
     rateGroup.textContent = won(GROUP_RATE);
     ratePersonal.textContent = won(PERSONAL_RATE);
     syncRateVisibility();
+    syncSteppers();
     const m = membership();
     // 요약 줄은 두 탭 모두 횟수·소진기간만 (정가 금액은 결제금액 입력과 헷갈리므로 표시하지 않는다)
     selNote.textContent = m.custom
-      ? m.periodText + " · " + m.sessions + "회"
+      ? m.label + " " + m.periodText + " · " + m.sessions + "회"
       : m.sessions + "회 · " + m.periodText;
     rTotal.textContent = "총 " + m.sessions + "회";
+  }
+
+  // 두 줄 스테퍼를 현재 선택에 맞춘다. 선택된 종류 줄만 인디고로 강조한다.
+  function syncSteppers() {
+    document.querySelectorAll(".mrow").forEach((row) => {
+      const kind = row.dataset.kind;
+      const active = state.kind === kind;
+      const value = active ? state.value : state.rows[kind];
+      row.classList.toggle("is-active", active);
+      const num = row.querySelector(".stepnum");
+      if (document.activeElement !== num) num.value = value;
+      row.querySelector(".stepunit").textContent = unitSymbol(active ? state.unit : KIND_UNIT[kind]);
+      row.querySelector('[data-step="-1"]').disabled = value <= 1;
+    });
+  }
+
+  function selectPreset(p) {
+    state.kind = p.kind;
+    state.presetId = p.id;
+    state.value = p.period_value;
+    state.unit = p.period_unit;
+    state.sessions = p.sessions;
+    state.rows[p.kind] = p.period_value;
+    state.lastSessions[p.kind] = p.sessions;
+    renderPresets();
+    refresh();
+  }
+
+  // 스테퍼·직접 타이핑: 그 줄의 단위(그룹=개월, 개인=주)로 기간만 바꾼다.
+  function setPeriod(kind, value) {
+    const v = Math.min(Math.max(Math.trunc(Number(value) || 1), 1), 99);
+    state.kind = kind;
+    state.presetId = null;
+    state.unit = KIND_UNIT[kind];
+    state.value = v;
+    state.rows[kind] = v;
+    state.sessions = state.lastSessions[kind] || state.sessions;
+    renderPresets();
+    refresh();
+  }
+
+  // 탭별로 보이는 블록 정리: 만료일 탭=스테퍼 두 줄, 환불 탭=프리셋·단가·직접 입력
+  function syncPanels() {
+    const isDate = tab === "date";
+    dateBlock.hidden = !isDate;
+    presetsBlock.hidden = isDate || state.customMode;
+    footEl.hidden = isDate;
+    customBox.hidden = isDate || !state.customMode;
+    customBox.classList.toggle("is-flush", state.customMode);
+    customToggle.textContent = state.customMode ? "프리셋" : "직접 입력";
   }
 
   // 단가(회당 차감액)는 환불 탭에서만 보여준다. 만료일 탭은 금액 없이 종류만.
@@ -357,21 +481,22 @@
   }
 
   function setCustomMode(on) {
+    state.customMode = on;
     if (on) {
       state.presetId = null;
-      presetsBlock.hidden = true;
-      customBox.hidden = false;
-      customBox.classList.add("is-flush");
-      customToggle.textContent = "프리셋";
       syncCustom();
     } else {
       const first = PRESETS.find((p) => p.kind === state.kind) || PRESETS[0];
-      state.presetId = first ? first.id : null;
-      presetsBlock.hidden = false;
-      customBox.hidden = true;
-      customBox.classList.remove("is-flush");
-      customToggle.textContent = "직접 입력";
+      if (first) {
+        state.presetId = first.id;
+        state.value = first.period_value;
+        state.unit = first.period_unit;
+        state.sessions = first.sessions;
+        state.rows[first.kind] = first.period_value;
+        state.lastSessions[first.kind] = first.sessions;
+      }
     }
+    syncPanels();
     renderPresets();
     refresh();
   }
@@ -387,6 +512,7 @@
   }
 
   function setFacts(rows) {
+    kpisEl.classList.toggle("is-single", rows.length === 1);
     kpisEl.innerHTML = rows.map((r) =>
       '<div class="kpi"><span class="k">' + r.k + '</span><span class="v">' + r.v + "</span>" +
       (r.small ? '<span class="s">' + r.small + "</span>" : "") + "</div>").join("");
@@ -401,10 +527,15 @@
     guideText = receiptText = "";
   }
 
+  // 스테퍼를 빠르게 연타하면 늦게 온 응답이 화면을 덮어쓸 수 있어 마지막 요청만 반영한다.
+  let calcSeq = 0;
+
   async function refreshDate() {
+    const seq = ++calcSeq;
     const m = membership();
     const label = m.custom ? m.label + " " + m.periodText : m.label;
     const out = await callApi("date_calc", {start: dStart.value, value: m.value, unit: m.unit, label: label});
+    if (seq !== calcSeq) return;
     labelEl.textContent = "만료일";
     copyBtn.textContent = "안내 문구 복사";
 
@@ -416,14 +547,14 @@
     setBig(out.expiry, {});
     setSub((WEEKDAY_FULL[out.expiry_weekday] || "") + " · " + m.periodText);
     setFacts([
-      {k: "시작일", v: out.start_text},
-      {k: "총 이용일수", v: out.total_days + "일"}
+      {k: "시작일", v: out.start_text}
     ]);
     guideText = out.guide_text;
     copyBtn.disabled = false;
   }
 
   async function refreshRefund() {
+    const seq = ++calcSeq;
     const m = membership();
     labelEl.textContent = "최종 환불금액";
     copyBtn.textContent = "환불 내역 복사";
@@ -434,6 +565,7 @@
       paid: digits, used: rUsed.value === "" ? "0" : rUsed.value,
       per_session: m.perSession, sessions: m.sessions, label: m.label
     });
+    if (seq !== calcSeq) return;
     if (!out || !out.ok) {
       emptyState((out && out.error) || "계산하지 못했습니다", "환불 내역 복사");
       if (out && out.error) setSub(out.error, true);
@@ -490,6 +622,7 @@
     $("panel-date").hidden = next !== "date";
     $("panel-refund").hidden = next !== "refund";
     syncRateVisibility();
+    syncPanels();
     refresh();
   }
 
@@ -516,36 +649,66 @@
 
   function bind() {
     document.addEventListener("click", (e) => {
-      const pill = e.target.closest(".pill");
-      if (pill) {
-        const p = PRESETS.find((x) => x.id === pill.dataset.id);
+      const chip = e.target.closest(".chip, .pill");
+      if (chip) {
+        const p = PRESETS.find((x) => x.id === chip.dataset.id);
         if (p) {
-          state.kind = p.kind;
-          state.presetId = p.id;
-          presetsBlock.hidden = false;
-          customBox.hidden = true;
-          customBox.classList.remove("is-flush");
-          customToggle.textContent = "직접 입력";
-          renderPresets();
-          refresh();
+          state.customMode = false;
+          selectPreset(p);
+          syncPanels();
         }
+        return;
+      }
+      const row = e.target.closest(".mrow");
+      if (row) {
+        const kind = row.dataset.kind;
+        if (state.kind !== kind) setPeriod(kind, state.rows[kind]);
         return;
       }
       const tabBtn = e.target.closest(".seg-btn");
       if (tabBtn) switchTab(tabBtn.dataset.tab);
     });
 
-    customToggle.addEventListener("click", () => setCustomMode(customBox.hidden));
+    // − / + 스테퍼와 가운데 숫자칸 직접 입력 (그룹=개월, 개인=주)
+    document.querySelectorAll(".step").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const kind = btn.dataset.kind;
+        const cur = state.kind === kind ? state.value : state.rows[kind];
+        setPeriod(kind, cur + Number(btn.dataset.step));
+      });
+    });
+    document.querySelectorAll(".stepnum").forEach((input) => {
+      const kind = input.dataset.kind;
+      input.addEventListener("focus", () => {
+        if (state.kind !== kind) setPeriod(kind, state.rows[kind]);
+      });
+      input.addEventListener("input", () => {
+        const v = parseInt(input.value, 10);
+        setPeriod(kind, Number.isFinite(v) ? v : 1);
+      });
+      input.addEventListener("blur", () => {
+        input.value = state.kind === kind ? state.value : state.rows[kind];
+      });
+    });
+
+    customToggle.addEventListener("click", () => setCustomMode(!state.customMode));
     $("c-kind").addEventListener("change", (e) => { state.kind = e.target.value; state.presetId = null; renderPresets(); refresh(); });
     $("c-value").addEventListener("input", (e) => {
       const v = parseInt(e.target.value, 10);
       state.value = Number.isFinite(v) && v > 0 ? v : 1;
+      state.presetId = null;
+      if (state.unit === KIND_UNIT[state.kind]) state.rows[state.kind] = state.value;
       renderPresets(); refresh();
     });
-    $("c-unit").addEventListener("change", (e) => { state.unit = e.target.value; renderPresets(); refresh(); });
+    $("c-unit").addEventListener("change", (e) => {
+      state.unit = e.target.value; state.presetId = null;
+      if (state.unit === KIND_UNIT[state.kind]) state.rows[state.kind] = state.value;
+      renderPresets(); refresh();
+    });
     $("c-sessions").addEventListener("input", (e) => {
       const v = parseInt(e.target.value, 10);
       state.sessions = Number.isFinite(v) && v > 0 ? v : 1;
+      state.lastSessions[state.kind] = state.sessions;
       renderPresets(); refresh();
     });
 
@@ -577,7 +740,18 @@
     const out = await callApi("presets");
     PRESETS = (out && out.presets) || [];
     if (!PRESETS.length) { rateNote.textContent = "회원권 정보를 불러오지 못했습니다"; return; }
-    if (!PRESETS.some((p) => p.id === state.presetId)) state.presetId = PRESETS[0].id;
+    if (!PRESETS.some((p) => p.id === state.presetId)) {
+      const first = PRESETS[0];
+      state.presetId = first.id;
+      state.kind = first.kind;
+      state.value = first.period_value;
+      state.unit = first.period_unit;
+      state.sessions = first.sessions;
+    }
+    ["group", "personal"].forEach((kind) => {
+      const p = PRESETS.find((x) => x.kind === kind);
+      if (p) { state.rows[kind] = p.period_value; state.lastSessions[kind] = p.sessions; }
+    });
     renderPresets();
     switchTab("date");
     initWindowState();
