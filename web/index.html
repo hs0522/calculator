@@ -349,22 +349,44 @@
   const pad = (n) => String(n).padStart(2, "0");
   const todayISO = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
 
-  function bridge() { return window.pywebview && window.pywebview.api ? window.pywebview.api : null; }
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const isHttpPreview = () => window.location.protocol.startsWith("http");
+
+  // pywebview 는 window.pywebview 를 먼저 만들고 api 함수는 나중에 채운다(finish.js).
+  // 그래서 api 객체가 비어 있는 동안은 "아직 준비 안 됨"으로 본다.
+  function bridge() {
+    const w = window.pywebview;
+    if (!w || !w.api) return null;
+    return typeof w.api.presets === "function" ? w.api : null;
+  }
+
+  // pywebviewready 가 늦게 와도 50ms 간격으로 브리지가 붙는지 직접 확인한다.
+  async function waitForBridge(timeoutMs) {
+    const deadline = Date.now() + timeoutMs;
+    while (!bridge()) {
+      if (Date.now() >= deadline) return null;
+      await sleep(50);
+    }
+    return bridge();
+  }
 
   async function callApi(name, payload) {
-    const api = bridge();
-    if (api && api[name]) {
+    let api = bridge();
+    if (!api && !isHttpPreview()) api = await waitForBridge(1500);  // 일시적으로 비어 있으면 짧게 재시도
+    if (api && typeof api[name] === "function") {
       try { return payload === undefined ? await api[name]() : await api[name](payload); }
       catch (e) { return {ok: false, error: "계산기를 불러오지 못했습니다."}; }
     }
-    try {
-      const res = await fetch("/api/" + name, {
-        method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload || {})
-      });
-      return await res.json();
-    } catch (e) {
-      return {ok: false, error: "계산기를 불러오지 못했습니다."};
+    // HTTP 로 띄운 미리보기(dev_server.py)에서만 서버 API 로 대신한다.
+    if (isHttpPreview()) {
+      try {
+        const res = await fetch("/api/" + name, {
+          method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload || {})
+        });
+        return await res.json();
+      } catch (e) { /* 아래 공통 오류로 */ }
     }
+    return {ok: false, error: "계산기를 불러오지 못했습니다."};
   }
 
   function membership() {
@@ -704,7 +726,8 @@
   async function init() {
     bind();
     dStart.value = todayISO();
-    const out = await callApi("presets");
+    let out = await callApi("presets");
+    if (!out || !out.presets || !out.presets.length) { await sleep(300); out = await callApi("presets"); }
     PRESETS = (out && out.presets) || [];
     if (!PRESETS.length) { rateNote.textContent = "회원권 정보를 불러오지 못했습니다"; return; }
     if (!PRESETS.some((p) => p.id === state.presetId)) {
@@ -726,10 +749,15 @@
 
   let booted = false;
   function boot() { if (booted) return; booted = true; init(); }
+
+  // 윈도우 WebView2(pywebview)는 DOMContentLoaded 시점에 window.pywebview.api 가 아직 비어 있다.
+  // 그때 boot() 하면 브리지 없이 계산하려다 "불러오지 못했습니다" 오류가 뜨므로,
+  // pywebviewready 이벤트를 기다리고 브리지가 실제로 붙을 때까지(최대 5초) 폴링한 뒤 시작한다.
   window.addEventListener("pywebviewready", boot);
   document.addEventListener("DOMContentLoaded", () => {
-    if (!window.pywebview) boot();
-    else setTimeout(boot, 1500);
+    if (isHttpPreview()) { boot(); return; }  // 브라우저/Playwright 미리보기
+    if (bridge()) { boot(); return; }
+    waitForBridge(5000).then(() => boot());
   });
 })();
 </script>

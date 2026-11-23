@@ -56,8 +56,10 @@ def _say(text: str) -> None:
 _ensure_std_streams()
 
 WINDOW_TITLE = "필라테스 계산기"
-DEFAULT_SIZE = (336, 456)
-MIN_SIZE = (310, 440)
+# 윈도우 WebView2 는 기본 폰트(Malgun Gothic)·스크롤바·DPI 차이로 같은 내용이 10~15px 더 높다.
+# 336×456 에서는 오른쪽 세로 스크롤바가 생겨 342×478 로 여유를 둔다.
+DEFAULT_SIZE = (342, 478)
+MIN_SIZE = (316, 460)
 REPO = "hs0522/calculator"
 RELEASES_API = f"https://api.github.com/repos/{REPO}/releases/latest"
 RELEASES_URL = f"https://github.com/{REPO}/releases/latest"
@@ -417,6 +419,14 @@ def selftest(strict: bool = False) -> int:
         "환불 12회 5회 사용": calculator.calculate_refund(264_000, 5, 22_000, 12).refund == 127_600,
         "web/index.html": os.path.exists(resource_path("web", "index.html")),
         "버전 비교": is_newer("1.0.1", "1.0.0") and not is_newer("1.0.0", "1.0.0"),
+        # index.html 이 window.pywebview.api 로 부르는 이름과 Api 메서드가 모두 맞는지 확인한다.
+        "JS 브리지 메서드": all(
+            callable(getattr(Api, name, None))
+            for name in (
+                "presets", "date_calc", "refund_calc", "copy", "get_window_state",
+                "set_on_top", "minimize", "close", "check_update", "open_release", "version",
+            )
+        ),
     }
     ok = all(checks.values())
 
