@@ -6,138 +6,165 @@
 <title>필라테스 계산기</title>
 <style>
   :root{
-    --bg:#f5f5f2; --surface:#ffffff; --ink:#191917; --muted:#8c8c84; --line:#e7e6e0;
-    --accent:#2f4a3f; --accent-dark:#263d34; --accent-soft:#eef1ed; --danger:#a3452f;
+    --bg:#F6F7FB; --card:#FFFFFF; --line:#EAECEF; --ink:#17181C;
+    --muted:#8A8D99; --muted2:#A7AAB5; --label:#5A5F6E;
+    --accent:#5B5FE9; --accent-dark:#4F46E5; --accent-tint:#EEEFFE; --track:#F1F2F7;
+    --danger:#D1424A;
+    --shadow:0 1px 2px rgba(23,24,28,.04), 0 10px 22px rgba(23,24,28,.05);
   }
   *{box-sizing:border-box;}
   [hidden]{display:none !important;}
   html,body{height:100%;margin:0;}
   body{
     background:var(--bg); color:var(--ink); overflow:hidden; user-select:none;
-    box-shadow:inset 0 0 0 1px #dedcd4;
-    font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif;
-    font-size:12.5px; line-height:1.45; -webkit-font-smoothing:antialiased;
+    box-shadow:inset 0 0 0 1px #E9EBF2;
+    font-family:"Pretendard","Noto Sans CJK KR","Malgun Gothic","Apple SD Gothic Neo","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:12px; line-height:1.45; -webkit-font-smoothing:antialiased;
   }
   /* ---------- 상단 미니 헤더 (드래그 영역) ---------- */
   .bar{
-    height:42px; display:flex; align-items:center; gap:6px; padding:0 6px 0 12px;
-    background:var(--surface); border-bottom:1px solid var(--line);
-    -webkit-app-region:drag;
+    height:42px; display:flex; align-items:center; gap:6px; padding:0 8px 0 14px;
+    background:transparent; -webkit-app-region:drag;
   }
   .bar h1{
-    margin:0; font-size:11.5px; font-weight:600; letter-spacing:-.01em; white-space:nowrap;
+    margin:0; font-size:12px; font-weight:700; letter-spacing:-.02em; white-space:nowrap;
     overflow:hidden; text-overflow:ellipsis;
   }
   .drag{flex:1 1 auto; min-width:0; height:100%; display:flex; align-items:center; -webkit-app-region:drag;}
-  .seg{display:flex; gap:2px; padding:2px; background:#eeede8; border-radius:7px; margin-left:auto; -webkit-app-region:no-drag;}
-  .seg-btn{
-    border:0; background:transparent; border-radius:5px; padding:4px 9px; font:inherit;
-    font-size:10.5px; color:#6f6f67; cursor:pointer; white-space:nowrap;
+  .seg{
+    display:flex; gap:2px; padding:3px; background:#ECEEF4; border-radius:999px;
+    margin-left:auto; -webkit-app-region:no-drag;
   }
-  .seg-btn.is-active{background:#fff; color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .seg-btn{
+    border:0; background:transparent; border-radius:999px; padding:5px 13px; font:inherit;
+    font-size:11px; font-weight:600; color:#6B6F7C; cursor:pointer; white-space:nowrap;
+    transition:background .14s,color .14s,box-shadow .14s;
+  }
+  .seg-btn:hover{color:var(--ink);}
+  .seg-btn.is-active{background:var(--accent); color:#fff; box-shadow:0 2px 8px rgba(91,95,233,.32);}
   .win{display:flex; align-items:center; gap:1px; -webkit-app-region:no-drag;}
   .wbtn{
-    border:0; background:transparent; color:#83837b; width:22px; height:22px; border-radius:6px;
-    font:inherit; font-size:11px; line-height:1; cursor:pointer; display:grid; place-items:center;
-    padding:0; transition:background .12s,color .12s;
+    border:0; background:transparent; color:#9A9DA7; width:23px; height:23px; border-radius:8px;
+    cursor:pointer; display:grid; place-items:center; padding:0;
+    transition:background .12s,color .12s;
   }
-  .wbtn:hover{background:#eeede8; color:var(--ink);}
-  .wbtn.is-on{background:var(--accent-soft); color:var(--accent);}
-  .wbtn.close:hover{background:#f3e3df; color:#9c3a24;}
+  .wbtn svg{width:13px; height:13px; display:block;}
+  .wbtn:hover{background:#EDEFF5; color:var(--ink);}
+  .wbtn.is-on{background:var(--accent-tint); color:var(--accent);}
+  .wbtn.close:hover{background:#FDECEE; color:var(--danger);}
   .upd{
-    border:1px solid var(--accent); background:var(--accent-soft); color:var(--accent);
-    border-radius:20px; padding:3px 8px; font:inherit; font-size:10px; font-weight:600; cursor:pointer;
+    border:1px solid #DCDEFB; background:var(--accent-tint); color:var(--accent-dark);
+    border-radius:999px; padding:3px 9px; font:inherit; font-size:10px; font-weight:700; cursor:pointer;
     white-space:nowrap;
   }
-  .upd:hover{background:#e3ebe5;}
+  .upd:hover{background:#E5E6FD;}
 
   /* ---------- 본문 ---------- */
   main{
-    height:calc(100% - 42px); padding:9px 10px 10px; display:flex; flex-direction:column;
-    gap:8px; overflow:hidden;
+    height:calc(100% - 42px); padding:2px 12px 11px; display:flex; flex-direction:column;
+    gap:9px; overflow:hidden;
   }
-  .block{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px 10px 10px;}
-  .row-head{display:flex; align-items:baseline; justify-content:space-between; gap:6px; margin-bottom:6px;}
-  .lbl{font-size:10.5px; color:#6d6d65; letter-spacing:.02em;}
-  .hint{font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:11px 13px; box-shadow:var(--shadow);
+  }
+  .card-head{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:8px;}
+  .card-title{font-size:12px; font-weight:700; letter-spacing:-.02em; color:var(--ink);}
+  .hint{font-size:9.5px; color:var(--danger); font-weight:600;}
+  .lbl{font-size:10.5px; color:var(--label); letter-spacing:-.01em;}
+  .lbl b{color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums;}
+  .sec{margin:0 0 6px;}
   .pills{display:grid; grid-template-columns:repeat(4,1fr); gap:5px;}
   .pills.three{grid-template-columns:repeat(3,1fr);}
   .pill{
-    border:1px solid var(--line); background:#fbfbf9; border-radius:7px; padding:5px 0;
-    font:inherit; font-size:11.5px; font-weight:500; color:#3c3c36; cursor:pointer;
-    transition:border-color .12s,background .12s,color .12s;
+    border:1px solid #E7E9F0; background:#FAFBFD; border-radius:9px; padding:6px 0;
+    font:inherit; font-size:11.5px; font-weight:600; color:#4A4E5A; cursor:pointer;
+    font-variant-numeric:tabular-nums;
+    transition:border-color .12s,background .12s,color .12s,box-shadow .12s;
   }
-  .pill:hover{border-color:#cdccc4;}
-  .pill.is-active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:600;}
-  .foot{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:7px;}
+  .pill:hover{border-color:#CFD2E0; color:var(--ink);}
+  .pill.is-active{
+    border-color:var(--accent); background:var(--accent-tint); color:var(--accent-dark);
+    font-weight:700; box-shadow:0 1px 3px rgba(91,95,233,.16);
+  }
+  .foot{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;}
   .sel-note{font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .link{border:0; background:transparent; padding:0; font:inherit; font-size:10.5px; color:#6d6d65; text-decoration:underline; text-underline-offset:3px; cursor:pointer; white-space:nowrap;}
-  .link:hover{color:var(--ink);}
-  .custom{margin-top:8px; padding-top:8px; border-top:1px solid var(--line); display:grid; gap:6px;}
-  .inline{display:flex; align-items:center; gap:5px;}
+  .link{border:0; background:transparent; padding:0; font:inherit; font-size:10.5px; font-weight:600; color:var(--accent); cursor:pointer; white-space:nowrap;}
+  .link:hover{color:var(--accent-dark); text-decoration:underline; text-underline-offset:3px;}
+  .custom{margin-top:9px; padding-top:9px; border-top:1px solid var(--line); display:grid; gap:7px;}
+  .custom.is-flush{margin-top:7px; padding-top:0; border-top:0;}
+  .inline{display:flex; align-items:center; gap:6px;}
   input,select{
-    width:100%; font:inherit; font-size:12px; color:inherit; background:#fff; border:1px solid var(--line);
-    border-radius:7px; padding:7px 9px; outline:none; transition:border-color .12s,box-shadow .12s;
+    width:100%; font:inherit; font-size:12px; color:inherit; background:#FBFBFE; border:1px solid #E3E6EE;
+    border-radius:10px; padding:8px 10px; outline:none; transition:border-color .12s,box-shadow .12s,background .12s;
   }
-  input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(47,74,63,.08);}
-  input::placeholder{color:#b7b6ad;}
+  input:focus,select:focus{border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(91,95,233,.12);}
+  input::placeholder{color:#B4B7C2;}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   input[type=number]{-moz-appearance:textfield;appearance:textfield;}
-  .suffix{font-size:10.5px; color:var(--muted); white-space:nowrap;}
+  .suffix{font-size:10.5px; color:var(--muted2); white-space:nowrap;}
   .ghost{
-    border:1px solid var(--line); background:#fff; border-radius:7px; padding:7px 10px; font:inherit;
-    font-size:11px; color:#63635b; cursor:pointer; white-space:nowrap;
+    border:0; background:var(--track); border-radius:10px; padding:9px 12px; font:inherit;
+    font-size:11px; font-weight:600; color:#4A4E5A; cursor:pointer; white-space:nowrap;
+    transition:background .12s,color .12s;
   }
-  .ghost:hover{border-color:#cdccc4; color:var(--ink);}
+  .ghost:hover{background:#E8EAF2; color:var(--ink);}
   .duo{display:grid; grid-template-columns:1.35fr 1fr; gap:6px;}
 
   /* ---------- 결과 ---------- */
   .result{
-    flex:1; min-height:0; background:var(--surface); border:1px solid var(--line); border-radius:10px;
-    padding:11px 12px 12px; display:flex; flex-direction:column; overflow:hidden;
+    flex:1; min-height:0; background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:12px 13px 13px; display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:var(--shadow);
   }
-  .rlabel{margin:0; font-size:10.5px; color:var(--muted);}
+  .rlabel{margin:0; font-size:10.5px; font-weight:600; color:var(--muted);}
+  .hero{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:center;}
   .big{
-    margin:5px 0 0; font-size:31px; font-weight:600; line-height:1.1; letter-spacing:-.025em;
+    margin:4px 0 0; font-size:29px; font-weight:800; line-height:1.08; letter-spacing:-.035em;
     font-variant-numeric:tabular-nums;
   }
-  .big.is-empty{color:#c7c6bd;}
-  .big.is-refund{color:var(--accent);}
-  .sub{margin:4px 0 0; font-size:11px; color:var(--muted); min-height:15px;}
+  .big.is-empty{color:#C9CCD6;}
+  .sub{margin:4px 0 0; font-size:10.5px; color:var(--muted); min-height:15px;}
   .sub.is-error{color:var(--danger);}
-  .facts{
-    margin-top:auto; padding-top:9px; border-top:1px solid var(--line);
-    display:grid; gap:4px; overflow-y:auto; min-height:0; scrollbar-width:thin;
+  .kpis{
+    margin:9px 0 9px; display:grid; grid-template-columns:1fr 1fr; gap:6px;
+    overflow-y:auto; min-height:0; scrollbar-width:thin; align-content:start;
   }
-  .facts::-webkit-scrollbar{width:4px;}
-  .facts::-webkit-scrollbar-thumb{background:#deddd6; border-radius:4px;}
-  .fact{display:flex; align-items:baseline; justify-content:space-between; gap:8px; font-size:11px;}
-  .fact .k{color:var(--muted);}
-  .fact .v{font-variant-numeric:tabular-nums; font-weight:500; text-align:right;}
-  .fact .v small{display:block; font-size:9.5px; font-weight:400; color:var(--muted);}
+  .kpis::-webkit-scrollbar{width:4px;}
+  .kpis::-webkit-scrollbar-thumb{background:#DFE1EA; border-radius:4px;}
+  .kpi{background:#F4F5FB; border-radius:11px; padding:6px 9px; min-width:0;}
+  .kpi .k{
+    display:block; font-size:9px; font-weight:700; color:var(--accent); line-height:1.3;
+    letter-spacing:.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .kpi .v{
+    display:block; font-size:13px; font-weight:700; color:var(--ink); line-height:1.3;
+    letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap;
+  }
+  .kpi .s{display:block; font-size:8.5px; color:#9A9DA7; line-height:1.3; white-space:nowrap; font-variant-numeric:tabular-nums;}
   .copy{
-    margin-top:10px; width:100%; border:0; border-radius:8px; padding:9px; background:var(--accent);
-    color:#fff; font:inherit; font-size:12px; font-weight:500; cursor:pointer; transition:background .12s;
+    margin-top:0; width:100%; border:0; border-radius:12px; padding:10px; background:var(--accent);
+    color:#fff; font:inherit; font-size:12px; font-weight:700; letter-spacing:-.01em; cursor:pointer;
+    box-shadow:0 7px 16px rgba(91,95,233,.28); transition:background .12s,box-shadow .12s;
   }
-  .copy:hover{background:var(--accent-dark);}
-  .copy:disabled{background:#d3d2ca; cursor:default;}
+  .copy:hover{background:var(--accent-dark); box-shadow:0 7px 16px rgba(79,70,229,.32);}
+  .copy:disabled{background:#E8EAF2; color:#A7AAB5; cursor:default; box-shadow:none;}
   .toast{
-    position:fixed; left:50%; bottom:14px; transform:translate(-50%,6px); background:#1d1d1a; color:#fff;
-    font-size:10.5px; padding:6px 12px; border-radius:20px; opacity:0; pointer-events:none;
+    position:fixed; left:50%; bottom:14px; transform:translate(-50%,6px); background:#1C1D24; color:#fff;
+    font-size:10.5px; font-weight:600; padding:7px 13px; border-radius:999px; opacity:0; pointer-events:none;
     transition:opacity .16s,transform .16s; z-index:9;
   }
   .toast.is-shown{opacity:1; transform:translate(-50%,0);}
 
   /* 창을 최소 높이까지 줄였을 때 */
   @media (max-height:520px){
-    main{padding:7px 8px 8px; gap:6px; overflow-y:auto;}
-    .block{padding:7px 9px 8px;}
-    .pill{padding:3px 0; font-size:11px;}
+    main{padding:0 10px 10px; gap:8px; overflow-y:auto;}
+    .card{padding:10px 11px;}
+    .pill{padding:4px 0; font-size:11px;}
     .result{flex:0 0 auto;}
     .big{font-size:25px;}
-    .facts{gap:2px; padding-top:7px; overflow:visible;}
-    .fact{font-size:10.5px;}
-    .copy{padding:8px; margin-top:8px;}
+    .kpis{overflow:visible;}
+    .copy{padding:9px;}
   }
 </style>
 </head>
@@ -150,22 +177,28 @@
     </nav>
     <div class="win">
       <button class="upd" id="btn-update" type="button" hidden>업데이트</button>
-      <button class="wbtn is-on" id="btn-pin" type="button" title="항상 위 고정" aria-label="항상 위 고정">📌</button>
-      <button class="wbtn" id="btn-min" type="button" title="최소화" aria-label="최소화">—</button>
-      <button class="wbtn close" id="btn-close" type="button" title="닫기" aria-label="닫기">✕</button>
+      <button class="wbtn is-on" id="btn-pin" type="button" title="항상 위 고정" aria-label="항상 위 고정">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2.6h10"/><path d="M8 13.2V5.6"/><path d="M4.9 8.7 8 5.6l3.1 3.1"/></svg>
+      </button>
+      <button class="wbtn" id="btn-min" type="button" title="최소화" aria-label="최소화">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3.4 8h9.2"/></svg>
+      </button>
+      <button class="wbtn close" id="btn-close" type="button" title="닫기" aria-label="닫기">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4.2 4.2l7.6 7.6M11.8 4.2l-7.6 7.6"/></svg>
+      </button>
     </div>
   </header>
 
   <main>
-    <section class="block">
-      <div class="row-head">
-        <span class="lbl">회원권</span>
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">회원권</span>
         <span class="hint" id="rate-note"></span>
       </div>
       <div class="presets" id="presets-block">
-        <p class="lbl" style="margin:0 0 5px;">6:1 그룹</p>
+        <p class="lbl sec">6:1 그룹 · 회당 <b id="rate-group">22,000원</b></p>
         <div class="pills" id="pills-group"></div>
-        <p class="lbl" style="margin:8px 0 5px;">1:1 개인</p>
+        <p class="lbl sec" style="margin:8px 0 6px;">1:1 개인 · 회당 <b id="rate-personal">77,000원</b></p>
         <div class="pills three" id="pills-personal"></div>
       </div>
       <div class="foot">
@@ -180,7 +213,7 @@
         <div class="duo">
           <div class="inline">
             <input id="c-value" type="number" min="1" step="1" value="2" inputmode="numeric">
-            <select id="c-unit" style="width:74px;"><option value="months">개월</option><option value="weeks">주</option></select>
+            <select id="c-unit" style="width:76px;"><option value="months">개월</option><option value="weeks">주</option></select>
           </div>
           <div class="inline">
             <input id="c-sessions" type="number" min="1" step="1" value="12" inputmode="numeric">
@@ -190,10 +223,10 @@
       </div>
     </section>
 
-    <section class="block" id="panel-date">
-      <div class="row-head">
-        <span class="lbl">시작일 (첫 수업일)</span>
-        <span class="hint">시작일 포함</span>
+    <section class="card" id="panel-date">
+      <div class="card-head">
+        <span class="card-title">시작일 <span class="lbl">(첫 수업일)</span></span>
+        <span class="lbl">시작일 포함</span>
       </div>
       <div class="inline">
         <input id="d-start" type="date">
@@ -201,10 +234,10 @@
       </div>
     </section>
 
-    <section class="block" id="panel-refund" hidden>
-      <div class="row-head">
-        <span class="lbl">결제금액 · 사용 횟수</span>
-        <span class="hint" id="r-total">총 12회</span>
+    <section class="card" id="panel-refund" hidden>
+      <div class="card-head">
+        <span class="card-title">결제금액 · 사용 횟수</span>
+        <span class="lbl" id="r-total">총 12회</span>
       </div>
       <div class="duo">
         <div class="inline">
@@ -219,10 +252,12 @@
     </section>
 
     <section class="result">
-      <p class="rlabel" id="r-label">만료일</p>
-      <p class="big is-empty" id="big">—</p>
-      <p class="sub" id="sub">시작일을 선택하세요</p>
-      <div class="facts" id="facts"></div>
+      <div class="hero">
+        <p class="rlabel" id="r-label">만료일</p>
+        <p class="big is-empty" id="big">—</p>
+        <p class="sub" id="sub">시작일을 선택하세요</p>
+      </div>
+      <div class="kpis" id="facts"></div>
       <button class="copy" id="copy" type="button" disabled>안내 문구 복사</button>
     </section>
   </main>
@@ -236,10 +271,11 @@
   const $ = (id) => document.getElementById(id);
   const pillsGroup = $("pills-group"), pillsPersonal = $("pills-personal"), selNote = $("sel-note");
   const presetsBlock = $("presets-block");
+  const labelEl = $("r-label");
+  const rateGroup = $("rate-group"), ratePersonal = $("rate-personal");
   const rateNote = $("rate-note"), customBox = $("custom"), customToggle = $("custom-toggle");
   const dStart = $("d-start"), rPaid = $("r-paid"), rUsed = $("r-used"), rTotal = $("r-total");
-  const bigEl = $("big"), subEl = $("sub"), factsEl = $("facts"), copyBtn = $("copy"), toastEl = $("toast");
-  const labelEl = $("r-label");
+  const bigEl = $("big"), subEl = $("sub"), kpisEl = $("facts"), copyBtn = $("copy"), toastEl = $("toast");
 
   let PRESETS = [];
   let tab = "date";
@@ -291,8 +327,10 @@
   function renderPresets() {
     pillsGroup.innerHTML = PRESETS.filter((p) => p.kind === "group").map(pillHtml).join("");
     pillsPersonal.innerHTML = PRESETS.filter((p) => p.kind === "personal").map(pillHtml).join("");
+    // 두 단가를 항상 라벨에 함께 보여준다
+    rateGroup.textContent = won(GROUP_RATE);
+    ratePersonal.textContent = won(PERSONAL_RATE);
     const m = membership();
-    rateNote.textContent = "회당 " + won(m.perSession) + " 차감";
     selNote.textContent = m.custom
       ? m.periodText + " · " + m.sessions + "회 · 회당 " + won(m.perSession)
       : m.sessions + "회 · " + m.periodText + (m.price ? " · " + won(m.price) : "");
@@ -311,6 +349,7 @@
       state.presetId = null;
       presetsBlock.hidden = true;
       customBox.hidden = false;
+      customBox.classList.add("is-flush");
       customToggle.textContent = "프리셋";
       syncCustom();
     } else {
@@ -318,6 +357,7 @@
       state.presetId = first ? first.id : null;
       presetsBlock.hidden = false;
       customBox.hidden = true;
+      customBox.classList.remove("is-flush");
       customToggle.textContent = "직접 입력";
     }
     renderPresets();
@@ -327,7 +367,6 @@
   function setBig(text, opts) {
     bigEl.textContent = text;
     bigEl.classList.toggle("is-empty", !!(opts && opts.empty));
-    bigEl.classList.toggle("is-refund", !!(opts && opts.refund));
   }
 
   function setSub(text, isError) {
@@ -336,9 +375,9 @@
   }
 
   function setFacts(rows) {
-    factsEl.innerHTML = rows.map((r) =>
-      '<div class="fact"><span class="k">' + r.k + '</span><span class="v">' + r.v +
-      (r.small ? "<small>" + r.small + "</small>" : "") + "</span></div>").join("");
+    kpisEl.innerHTML = rows.map((r) =>
+      '<div class="kpi"><span class="k">' + r.k + '</span><span class="v">' + r.v + "</span>" +
+      (r.small ? '<span class="s">' + r.small + "</span>" : "") + "</div>").join("");
   }
 
   function emptyState(text, copyLabel) {
@@ -366,7 +405,6 @@
     setSub((WEEKDAY_FULL[out.expiry_weekday] || "") + " · " + m.periodText);
     setFacts([
       {k: "시작일", v: out.start_text},
-      {k: "기간", v: m.periodText},
       {k: "총 이용일수", v: out.total_days + "일"}
     ]);
     guideText = out.guide_text;
@@ -389,7 +427,7 @@
       if (out && out.error) setSub(out.error, true);
       return;
     }
-    setBig(out.refund_text, {refund: out.refundable});
+    setBig(out.refund_text, {});
     setSub(out.refundable
       ? out.used + "회 사용 · " + out.remaining_sessions + "회 남음"
       : "차감 합계가 결제금액을 넘어 환불금액이 없습니다");
@@ -397,7 +435,7 @@
       {k: "결제금액", v: out.paid_text},
       {k: "위약금 10%", v: out.penalty_text},
       {k: "사용 차감", v: out.usage_text, small: out.usage_detail},
-      {k: "잔여 횟수", v: out.remaining_sessions === null ? "—" : out.remaining_sessions + "회"}
+      {k: "잔여 횟수", v: out.remaining_sessions === null ? "—" : out.remaining_sessions + "회", small: "총 " + m.sessions + "회 중"}
     ]);
     receiptText = out.receipt_text;
     copyBtn.disabled = false;
@@ -473,6 +511,7 @@
           state.presetId = p.id;
           presetsBlock.hidden = false;
           customBox.hidden = true;
+          customBox.classList.remove("is-flush");
           customToggle.textContent = "직접 입력";
           renderPresets();
           refresh();
