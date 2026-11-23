@@ -334,6 +334,135 @@
   const kindLabel = (kind) => KIND_LABEL[kind] || "";
   const unitSymbol = (unit) => UNIT_SYMBOL[unit] || "";
 
+  // ---------- 브리지 없이도 100% 계산되는 내장 엔진 ----------
+  // calculator.py 와 같은 규칙·같은 결과를 이 파일 안에서도 계산한다.
+  // pywebview 브리지가 늦게 붙거나(첫 프레임) 비어 있어도 화면에
+  // 빨간 오류 없이 100% 계산되게 하는 이중 안전장치다.
+  const PENALTY_RATE = 0.10;
+  const WEEKDAY_KO = ["일", "월", "화", "수", "목", "금", "토"];  // JS getDay() 기준
+  const PRESET_DATA = [
+    {id: "g12", kind: "group", sessions: 12, period_value: 2, period_unit: "months", price: 264000},
+    {id: "g24", kind: "group", sessions: 24, period_value: 3, period_unit: "months", price: 381800},
+    {id: "g36", kind: "group", sessions: 36, period_value: 4, period_unit: "months", price: 500700},
+    {id: "g48", kind: "group", sessions: 48, period_value: 6, period_unit: "months", price: 571600},
+    {id: "p15", kind: "personal", sessions: 15, period_value: 10, period_unit: "weeks", price: 750000},
+    {id: "p20", kind: "personal", sessions: 20, period_value: 10, period_unit: "weeks", price: 1200000},
+    {id: "p30", kind: "personal", sessions: 30, period_value: 20, period_unit: "weeks", price: 1500000},
+  ];
+
+  function localPresets() {
+    return {
+      ok: true,
+      presets: PRESET_DATA.map((p) => ({
+        id: p.id, kind: p.kind, kind_label: kindLabel(p.kind), sessions: p.sessions,
+        period_value: p.period_value, period_unit: p.period_unit,
+        period_label: p.period_value + unitSymbol(p.period_unit),
+        price: p.price, per_session: KIND_RATE[p.kind],
+        label: kindLabel(p.kind) + " " + p.sessions + "회",
+      })),
+    };
+  }
+
+  const isoDate = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const dateText = (d) => isoDate(d) + "(" + WEEKDAY_KO[d.getDay()] + ")";
+
+  function parseISODate(text) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(text || "").trim());
+    if (!m) throw new Error("시작일을 선택해 주세요.");
+    const y = Number(m[1]), mo = Number(m[2]) - 1, da = Number(m[3]);
+    const d = new Date(y, mo, da);
+    if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== da) {
+      throw new Error("시작일 형식이 올바르지 않습니다.");
+    }
+    return d;
+  }
+
+  // 월을 더하되 대상 월의 말일을 넘지 않게 보정한다(calculator.add_months 와 동일).
+  function addMonths(base, months) {
+    const total = base.getMonth() + months;
+    const year = base.getFullYear() + Math.floor(total / 12);
+    const month = ((total % 12) + 12) % 12;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return new Date(year, month, Math.min(base.getDate(), lastDay));
+  }
+
+  function localDateCalc(payload) {
+    payload = payload || {};
+    const start = parseISODate(payload.start);
+    const value = Math.trunc(Number(payload.value));
+    if (!Number.isFinite(value) || value < 1) throw new Error("기간은 1 이상의 정수여야 합니다.");
+    const unit = payload.unit === "weeks" ? "weeks" : "months";
+    let expiry;
+    if (unit === "months") {
+      const end = addMonths(start, value);
+      expiry = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1);
+    } else {
+      expiry = new Date(start.getFullYear(), start.getMonth(), start.getDate() + value * 7 - 1);
+    }
+    const days = Math.round((expiry - start) / 86400000) + 1;
+    const label = payload.label || "";
+    const lines = [];
+    if (label) lines.push("[" + label + "]");
+    lines.push("시작일 " + dateText(start));
+    lines.push("만료일 " + dateText(expiry));
+    lines.push("이용 기간 총 " + days + "일");
+    return {
+      ok: true,
+      start: isoDate(start), start_text: dateText(start),
+      expiry: isoDate(expiry), expiry_text: dateText(expiry),
+      expiry_weekday: WEEKDAY_KO[expiry.getDay()],
+      total_days: days,
+      period_text: value + unitSymbol(unit),
+      guide_text: lines.join("\n"),
+    };
+  }
+
+  function localRefundCalc(payload) {
+    payload = payload || {};
+    const digits = String(payload.paid == null ? "" : payload.paid).replace(/[^\d]/g, "");
+    if (!digits) throw new Error("금액을 입력해 주세요.");
+    const paid = Number(digits);
+    if (!paid) throw new Error("결제금액은 0원보다 커야 합니다.");
+    const used = Math.max(Math.trunc(Number(payload.used) || 0), 0);
+    const perSession = Math.max(Math.trunc(Number(payload.per_session) || 0), 0);
+    // 위약금은 결제금액의 10%, 원 미만은 절사한다(정수 금액에서는 paid/10 내림과 같다).
+    const penalty = Math.floor(paid / 10);
+    const deduction = used * perSession;
+    const raw = paid - penalty - deduction;
+    const refundable = raw > 0;
+    const refund = refundable ? raw : 0;
+    const refundText = refundable ? won(refund) : "0원 (환불 불가)";
+    const label = payload.label || "";
+    const lines = [label ? "[환불 내역] " + label : "[환불 내역]"];
+    lines.push("결제금액 " + won(paid));
+    lines.push("위약금(10%) " + won(penalty));
+    lines.push("사용 차감 " + used + "회 × " + won(perSession) + " = " + won(deduction));
+    lines.push("최종 환불금액 " + refundText);
+    return {
+      ok: true,
+      paid: paid, paid_text: won(paid),
+      penalty: penalty, penalty_text: won(penalty),
+      used: used, per_session: perSession, per_session_text: won(perSession),
+      usage_deduction: deduction, usage_text: won(deduction),
+      usage_detail: used + "회 × " + won(perSession),
+      refund: refund, refund_text: refundText, refundable: refundable,
+      remaining_sessions: null,
+      receipt_text: lines.join("\n"),
+    };
+  }
+
+  const LOCAL_API = {presets: localPresets, date_calc: localDateCalc, refund_calc: localRefundCalc};
+
+  function localCall(name, payload) {
+    const fn = LOCAL_API[name];
+    if (!fn) return null;
+    try {
+      return fn(payload);
+    } catch (e) {
+      return {ok: false, error: (e && e.message) ? e.message : "입력값을 확인해 주세요."};
+    }
+  }
+
   let PRESETS = [];
   let tab = "date";
   let receiptText = "";
@@ -371,11 +500,12 @@
   }
 
   async function callApi(name, payload) {
-    let api = bridge();
-    if (!api && !isHttpPreview()) api = await waitForBridge(1500);  // 일시적으로 비어 있으면 짧게 재시도
+    const api = bridge();
     if (api && typeof api[name] === "function") {
-      try { return payload === undefined ? await api[name]() : await api[name](payload); }
-      catch (e) { return {ok: false, error: "계산기를 불러오지 못했습니다."}; }
+      try {
+        const out = payload === undefined ? await api[name]() : await api[name](payload);
+        if (out && typeof out === "object") return out;   // 정상 응답
+      } catch (e) { /* 브리지 응답 실패 → 내장 계산으로 */ }
     }
     // HTTP 로 띄운 미리보기(dev_server.py)에서만 서버 API 로 대신한다.
     if (isHttpPreview()) {
@@ -383,10 +513,11 @@
         const res = await fetch("/api/" + name, {
           method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload || {})
         });
-        return await res.json();
-      } catch (e) { /* 아래 공통 오류로 */ }
+        if (res.ok) return await res.json();
+      } catch (e) { /* 아래 내장 계산으로 */ }
     }
-    return {ok: false, error: "계산기를 불러오지 못했습니다."};
+    // 브리지가 없거나 실패해도 여기서 100% 계산된다.
+    return localCall(name, payload) || {ok: false, error: ""};
   }
 
   function membership() {
@@ -616,13 +747,16 @@
   }
 
   async function callWindow(name, arg) {
-    const api = bridge();
-    if (!api || !api[name]) return null;
+    let api = bridge();
+    if (!api && !isHttpPreview()) api = await waitForBridge(1500);  // 창 제어는 브리지가 필요하다
+    if (!api || typeof api[name] !== "function") return null;
     try { return arg === undefined ? await api[name]() : await api[name](arg); }
     catch (e) { return null; }
   }
 
   async function initWindowState() {
+    // 창 제어·업데이트 확인은 브리지가 필요하다. 계산과 달리 없으면 조용히 넘어간다.
+    if (!bridge() && !isHttpPreview()) await waitForBridge(5000);
     const st = await callWindow("get_window_state");
     if (st && typeof st.always_on_top === "boolean") {
       $("btn-pin").classList.toggle("is-on", st.always_on_top);
@@ -715,7 +849,11 @@
     copyBtn.addEventListener("click", () => copyText(receiptText));
 
     $("btn-min").addEventListener("click", () => callWindow("minimize"));
-    $("btn-close").addEventListener("click", () => callWindow("close"));
+    $("btn-close").addEventListener("click", async () => {
+      const done = await callWindow("close");
+      // 브리지가 아직 없을 때를 대비한 최후 수단(윈도우 WebView2는 보통 무시한다).
+      if (done === null) { try { window.close(); } catch (e) { /* noop */ } }
+    });
     $("btn-pin").addEventListener("click", async () => {
       const nowOn = !$("btn-pin").classList.contains("is-on");
       const result = await callWindow("set_on_top", nowOn);
@@ -726,10 +864,8 @@
   async function init() {
     bind();
     dStart.value = todayISO();
-    let out = await callApi("presets");
-    if (!out || !out.presets || !out.presets.length) { await sleep(300); out = await callApi("presets"); }
-    PRESETS = (out && out.presets) || [];
-    if (!PRESETS.length) { rateNote.textContent = "회원권 정보를 불러오지 못했습니다"; return; }
+    // 내장 프리셋으로 즉시 화면을 그린다(브리지를 기다리지 않는다).
+    PRESETS = localPresets().presets;
     if (!PRESETS.some((p) => p.id === state.presetId)) {
       const first = PRESETS[0];
       state.presetId = first.id;
@@ -738,27 +874,40 @@
       state.unit = first.period_unit;
       state.sessions = first.sessions;
     }
-    ["group", "personal"].forEach((kind) => {
-      const p = PRESETS.find((x) => x.kind === kind);
-      if (p) { state.rows[kind] = p.period_value; state.lastSessions[kind] = p.sessions; }
-    });
+    syncPresetRows();
     renderChips();
     switchTab("date");
     initWindowState();
+
+    // 브리지가 붙어 있으면 파이썬 쪽 프리셋으로 목록을 한 번 맞춘다(내용은 같다).
+    const out = await callApi("presets");
+    if (out && out.ok && out.presets && out.presets.length) {
+      PRESETS = out.presets;
+      syncPresetRows();
+      renderChips();
+    }
+  }
+
+  // 회원권 종류별 기본 기간·횟수를 프리셋 표에서 다시 채운다.
+  function syncPresetRows() {
+    ["group", "personal"].forEach((kind) => {
+      const p = PRESETS.find((x) => x.kind === kind);
+      if (p) {
+        state.rows[kind] = p.period_value;
+        state.lastSessions[kind] = p.sessions;
+      }
+    });
+    if (state.kind && state.rows[state.kind]) state.value = state.rows[state.kind];
+    if (state.lastSessions[state.kind]) state.sessions = state.lastSessions[state.kind];
   }
 
   let booted = false;
   function boot() { if (booted) return; booted = true; init(); }
 
-  // 윈도우 WebView2(pywebview)는 DOMContentLoaded 시점에 window.pywebview.api 가 아직 비어 있다.
-  // 그때 boot() 하면 브리지 없이 계산하려다 "불러오지 못했습니다" 오류가 뜨므로,
-  // pywebviewready 이벤트를 기다리고 브리지가 실제로 붙을 때까지(최대 5초) 폴링한 뒤 시작한다.
+  // 계산은 내장 엔진으로 즉시 시작한다(브리지를 기다리지 않음).
+  // 창 제어·업데이트 확인은 initWindowState 가 브리지를 짧게 기다렸다 붙으면 연결한다.
   window.addEventListener("pywebviewready", boot);
-  document.addEventListener("DOMContentLoaded", () => {
-    if (isHttpPreview()) { boot(); return; }  // 브라우저/Playwright 미리보기
-    if (bridge()) { boot(); return; }
-    waitForBridge(5000).then(() => boot());
-  });
+  document.addEventListener("DOMContentLoaded", () => { boot(); });
 })();
 </script>
 </body>

@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import threading
 import urllib.request
 import webbrowser
 
@@ -311,34 +312,68 @@ class Widget:
 
 
 class Api:
-    """web/index.html 이 window.pywebview.api 로 호출한다."""
+    """web/index.html 이 window.pywebview.api 로 호출한다.
+
+    pywebview 5.4 는 `dir(js_api)` 를 훑어 public 멤버를 함수 목록으로 만든다
+    (webview/util.py 의 inject_pywebview 안 get_functions). 이름이 `_` 로
+    시작하지 않는 속성이 있으면 그 객체를 재귀 탐색하는데, 위젯·창·WinForms
+    객체까지 파고들다 예외가 나면 finish 스크립트가 주입되지 않아
+    `window.pywebview.api` 가 통째로 비어 버린다(계산·닫기 모두 먹통).
+    그래서 이 클래스는 메서드 말고 public 속성을 하나도 두지 않는다.
+    위젯 참조는 `self._widget` 으로만 보관한다.
+    """
 
     def __init__(self, widget: Widget) -> None:
-        self.widget = widget
+        self._widget = widget
+
+    def _window(self):
+        return getattr(self._widget, "window", None)
 
     # 창 제어 ----------------------------------------------------------
     def version(self):
         return {"version": APP_VERSION, "repo": REPO}
 
     def minimize(self):
+        """JS 브리지 스레드에서 창을 최소화한다(실패해도 예외를 JS 로 넘기지 않는다)."""
+        window = self._window()
+        if window is None:
+            return False
         try:
-            self.widget.window.minimize()
+            window.minimize()
         except Exception:
-            pass
+            return False
         return True
 
     def close(self):
-        try:
-            self.widget.window.destroy()
-        except Exception:
-            pass
+        """창을 닫는다.
+
+        destroy() 는 내부적으로 UI 스레드에 Invoke 하므로, JS 응답을 돌려주는
+        같은 스레드에서 바로 부르지 않고 50ms 뒤 타이머 스레드에서 닫는다.
+        호출은 즉시 True 를 돌려주므로 프라미스가 끊기지 않는다.
+        """
+        window = self._window()
+        if window is None:
+            return False
+        if getattr(self, "_close_requested", False):
+            return True
+        self._close_requested = True
+
+        def _destroy() -> None:
+            try:
+                window.destroy()
+            except Exception:
+                pass
+
+        timer = threading.Timer(0.05, _destroy)
+        timer.daemon = False  # 창이 닫히기 전에 프로세스가 끝나지 않게 한다
+        timer.start()
         return True
 
     def set_on_top(self, value=True):
-        return self.widget.apply_on_top(bool(value))
+        return self._widget.apply_on_top(bool(value))
 
     def get_window_state(self):
-        return {"always_on_top": self.widget.always_on_top}
+        return {"always_on_top": self._widget.always_on_top}
 
     def check_update(self):
         return check_update()
@@ -410,6 +445,24 @@ class Api:
 # ---------------------------------------------------------------------------
 
 
+def api_public_members() -> list:
+    """pywebview 가 재귀 탐색할 위험이 있는 Api 의 public 비메서드 멤버."""
+    class _StandIn:
+        window = None
+        always_on_top = True
+
+    api = Api(_StandIn())
+    return [
+        name
+        for name in dir(api)
+        if not name.startswith("_") and not callable(getattr(api, name, None))
+    ]
+
+
+def api_has_no_public_attributes() -> bool:
+    return not api_public_members()
+
+
 def selftest(strict: bool = False) -> int:
     from datetime import date
 
@@ -427,6 +480,7 @@ def selftest(strict: bool = False) -> int:
                 "set_on_top", "minimize", "close", "check_update", "open_release", "version",
             )
         ),
+        "Api public 속성 없음": api_has_no_public_attributes(),
     }
     ok = all(checks.values())
 

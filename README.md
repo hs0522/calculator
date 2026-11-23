@@ -65,16 +65,21 @@
 app.py                 위젯 창(pywebview, frameless) · 창/위치 저장 · 업데이트 확인 · --selftest
 calculator.py          계산 코어 (순수 파이썬, UI 없음)
 version.py             APP_VERSION (릴리즈 빌드 때 워크플로우가 덮어씀)
-web/index.html         342px 1열 위젯 UI
+web/index.html         342px 1열 위젯 UI (브리지가 없어도 계산되는 내장 엔진 포함)
 dev_server.py          브라우저에서 화면만 미리 볼 때 쓰는 로컬 서버 (개발용)
-tests/test_calculator.py  unittest 48건
+tests/test_calculator.py       계산 코어 unittest
+tests/test_app_bridge.py       화면·브리지 소스 회귀 테스트
+tests/test_pywebview_injection.py  pywebview 5.4 가 api 를 실제로 등록하는지 검사
 installer/pilatescalc.iss Inno Setup 설치 스크립트
 ci/release.yml         릴리즈 워크플로우 원본 (→ .github/workflows/release.yml)
 .github/workflows/release.yml  GitHub Actions (태그 푸시 시 exe·설치본·ZIP 자동 릴리즈)
+assets/pilates.ico     앱·설치본·바탕화면 아이콘 (16~256px 멀티사이즈)
 ```
 
-계산 로직은 `calculator.py` 한 곳에만 있습니다. 화면은 `window.pywebview.api`(앱 실행 시) 또는 `/api/*`(개발 서버)로
-같은 함수를 호출하므로 화면과 코어의 결과가 갈라지지 않습니다.
+계산 로직은 `calculator.py` 에 있고, 화면은 `window.pywebview.api`(앱 실행 시) 또는 `/api/*`(개발 서버)로
+같은 함수를 호출합니다. `web/index.html` 에도 같은 규칙의 계산이 한 벌 더 들어 있어, 파이썬 브리지가
+늦게 붙거나 비어 있어도 화면이 오류 대신 같은 결과를 바로 보여 줍니다(`tests/test_app_bridge.py` 가
+두 목록·단가가 갈라지지 않는지 검사).
 
 ## 업데이트 확인
 

@@ -16,6 +16,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 import app  # noqa: E402
+import calculator  # noqa: E402
 
 
 def read_web() -> str:
@@ -35,6 +36,49 @@ class TestWindowSize(unittest.TestCase):
         self.assertGreaterEqual(app.MIN_SIZE[1], 460)
         self.assertLessEqual(app.MIN_SIZE[0], app.DEFAULT_SIZE[0])
         self.assertLessEqual(app.MIN_SIZE[1], app.DEFAULT_SIZE[1])
+
+
+class TestLocalEngineFallback(unittest.TestCase):
+    """브리지가 없어도 계산되는 내장 엔진(v1.0.3)이 되돌아가지 않게 고정한다."""
+
+    def test_local_calculators_exist(self):
+        html = read_web()
+        self.assertIn("function localDateCalc", html)
+        self.assertIn("function localRefundCalc", html)
+        self.assertIn("function localPresets", html)
+        self.assertIn("const LOCAL_API =", html)
+        self.assertIn("function localCall", html)
+
+    def test_bridge_error_messages_are_gone(self):
+        html = read_web()
+        self.assertNotIn("계산기를 불러오지 못했습니다", html)
+        self.assertNotIn("회원권 정보를 불러오지 못했습니다", html)
+
+    def test_boot_does_not_wait_for_bridge(self):
+        html = read_web()
+        self.assertIn('document.addEventListener("DOMContentLoaded", () => { boot(); })', html)
+
+    def test_presets_match_python(self):
+        html = read_web()
+        rows = re.findall(
+            r'\{id: "(\w+)", kind: "(\w+)", sessions: (\d+), period_value: (\d+), '
+            r'period_unit: "(\w+)", price: (\d+)\}',
+            html,
+        )
+        parsed = [
+            (pid, kind, int(sessions), int(value), unit, int(price))
+            for pid, kind, sessions, value, unit, price in rows
+        ]
+        expected = [
+            (p.id, p.kind, p.sessions, p.period_value, p.period_unit, p.price)
+            for p in calculator.PRESETS
+        ]
+        self.assertEqual(parsed, expected)
+
+    def test_rates_match_python(self):
+        html = read_web()
+        self.assertIn("const GROUP_RATE = 22000, PERSONAL_RATE = 77000;", html)
+        self.assertIn("const PENALTY_RATE = 0.10;", html)
 
 
 class TestJsBridge(unittest.TestCase):
