@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>필라테스 만료일 · 환불 계산기</title>
+<style>
+  :root{
+    --bg:#f5f5f2; --surface:#ffffff; --ink:#191917; --muted:#8b8b84; --line:#e6e5df;
+    --accent:#2f4a3f; --accent-dark:#263d34; --accent-soft:#eef1ed; --danger:#a3452f;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif;
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .app{max-width:1060px; margin:0 auto; padding:26px 28px 36px;}
+  .head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:20px;}
+  .eyebrow{margin:0 0 5px; font-size:10px; letter-spacing:.18em; color:var(--muted);}
+  h1{margin:0; font-size:19px; font-weight:600; letter-spacing:-.01em;}
+  .tabs{display:flex; gap:2px; padding:3px; background:#ebe9e3; border-radius:9px;}
+  .tab{border:0; background:transparent; padding:6px 18px; border-radius:7px; font:inherit; font-size:13px;
+       color:#6e6e66; cursor:pointer; transition:background .12s,color .12s;}
+  .tab:hover{color:var(--ink);}
+  .tab.is-active{background:#fff; color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .grid{display:grid; grid-template-columns:minmax(0,1fr) 344px; gap:16px; align-items:start;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 18px 20px; margin-bottom:14px;}
+  .card:last-child{margin-bottom:0;}
+  .card-head{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:14px;}
+  .card-head h2{margin:0; font-size:11.5px; font-weight:600; letter-spacing:.04em; color:#5f5f57;}
+  .note{margin:0; font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .chips-label{margin:15px 0 7px; font-size:11px; color:var(--muted); letter-spacing:.02em;}
+  #chips-wrap > .chips-label:first-child{margin-top:0;}
+  .chips{display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px;}
+  .chip{border:1px solid var(--line); background:#fbfbf9; border-radius:9px; padding:9px 10px 10px;
+        text-align:left; font:inherit; cursor:pointer; transition:border-color .12s,background .12s,box-shadow .12s;}
+  .chip:hover{border-color:#cdccc4;}
+  .chip b{display:block; font-size:14px; font-weight:600; letter-spacing:-.01em;}
+  .chip span{display:block; margin-top:2px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums;
+             white-space:nowrap; letter-spacing:-.01em;}
+  .chip.is-active{border-color:var(--accent); background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent);}
+  .chip.is-active span{color:#5c7268;}
+  .custom-toggle{margin-top:12px; border:0; background:transparent; padding:0; font:inherit; font-size:12px;
+                 color:#6e6e66; text-decoration:underline; text-underline-offset:3px; cursor:pointer;}
+  .custom-toggle:hover{color:var(--ink);}
+  .custom{margin-top:14px; padding-top:14px; border-top:1px solid var(--line);}
+  .field{display:block;}
+  .field-label{display:block; margin-bottom:6px; font-size:11.5px; color:var(--muted);}
+  input,select{width:100%; font:inherit; color:inherit; background:#fff; border:1px solid var(--line);
+               border-radius:8px; padding:9px 11px; outline:none; transition:border-color .12s,box-shadow .12s;}
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+  input[type=number]{-moz-appearance:textfield; appearance:textfield;}
+  input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(47,74,63,.08);}
+  input::placeholder{color:#b8b7ae;}
+  .inline{display:flex; align-items:center; gap:8px;}
+  .inline input{flex:1; min-width:0;}
+  .suffix{font-size:13px; color:var(--muted);}
+  .ghost{border:1px solid var(--line); background:#fff; border-radius:8px; padding:9px 13px; font:inherit;
+         font-size:12.5px; color:#5f5f57; cursor:pointer; white-space:nowrap; transition:border-color .12s,color .12s;}
+  .ghost:hover{border-color:#cdccc4; color:var(--ink);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .readonly{margin:0; padding:9px 11px; border:1px dashed var(--line); border-radius:8px; font-size:13px;
+            color:#5f5f57; font-variant-numeric:tabular-nums; background:#fbfbf9;}
+  .help{display:block; margin-top:6px; font-size:11px; color:var(--muted);}
+  .result{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px;}
+  .result + .result{margin-top:14px;}
+  .result-eyebrow{margin:0 0 7px; font-size:11.5px; color:var(--muted);}
+  .result-big{margin:0; font-size:31px; font-weight:600; line-height:1.15; letter-spacing:-.02em;
+              font-variant-numeric:tabular-nums;}
+  .result-big.is-empty{color:#c6c5bc;}
+  .result-big.is-refund{color:var(--accent);}
+  .result-sub{margin:5px 0 0; font-size:12.5px; color:var(--muted); min-height:19px;}
+  .result-sub.is-error{color:var(--danger);}
+  .rows{margin:18px 0 0; padding:13px 0 0; border-top:1px solid var(--line);}
+  .row{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:5px 0; font-size:13px;}
+  .row dt{margin:0; color:var(--muted);}
+  .row dd{margin:0; font-weight:500; font-variant-numeric:tabular-nums; text-align:right;}
+  .row dd .row-sub{display:block; margin-top:1px; font-size:10.5px; font-weight:400; color:var(--muted);}
+  .btn{margin-top:18px; width:100%; border:0; border-radius:9px; padding:11px; background:var(--accent);
+       color:#fff; font:inherit; font-size:13.5px; font-weight:500; cursor:pointer; transition:background .12s;}
+  .btn:hover{background:var(--accent-dark);}
+  .btn:disabled{background:#d3d2ca; cursor:default;}
+  .toast{height:16px; margin-top:8px; text-align:center; font-size:11.5px; color:var(--accent); opacity:0; transition:opacity .18s;}
+  .toast.is-shown{opacity:1;}
+  @media (max-width:880px){
+    .app{padding:20px 16px 28px;}
+    .grid{grid-template-columns:minmax(0,1fr);}
+    .result-big{font-size:27px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="head">
+    <div>
+      <p class="eyebrow">PILATES DESK</p>
+      <h1>만료일 · 환불금액 계산기</h1>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" data-tab="date" role="tab" aria-selected="true">만료일</button>
+      <button class="tab" data-tab="refund" role="tab" aria-selected="false">환불금액</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <section class="card">
+        <div class="card-head">
+          <h2>회원권</h2>
+          <p class="note" id="rate-note"></p>
+        </div>
+        <div id="chips-wrap"></div>
+        <button class="custom-toggle" id="custom-toggle" type="button">직접 입력</button>
+
+        <div class="custom" id="custom" hidden>
+          <label class="field" style="margin-bottom:12px;">
+            <span class="field-label">구분</span>
+            <select id="c-kind">
+              <option value="group">6:1 그룹 · 회당 22,000원</option>
+              <option value="personal">1:1 개인 · 회당 77,000원</option>
+            </select>
+          </label>
+          <div class="row2">
+            <label class="field">
+              <span class="field-label">기간</span>
+              <div class="inline">
+                <input id="c-value" type="number" min="1" step="1" value="2" inputmode="numeric">
+                <select id="c-unit" style="width:82px;">
+                  <option value="months">개월</option>
+                  <option value="weeks">주</option>
+                </select>
+              </div>
+            </label>
+            <label class="field">
+              <span class="field-label">총 횟수</span>
+              <div class="inline">
+                <input id="c-sessions" type="number" min="1" step="1" value="12" inputmode="numeric">
+                <span class="suffix">회</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="panel-date">
+        <div class="card-head">
+          <h2>계산 조건</h2>
+          <p class="note">시작일 포함 기준</p>
+        </div>
+        <div class="row2">
+          <label class="field">
+            <span class="field-label">시작일 (첫 수업일)</span>
+            <div class="inline">
+              <input id="d-start" type="date">
+              <button class="ghost" id="d-today" type="button">오늘</button>
+            </div>
+          </label>
+          <div class="field">
+            <span class="field-label">기간</span>
+            <p class="readonly" id="d-period">—</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="panel-refund" hidden>
+        <div class="card-head">
+          <h2>계산 조건</h2>
+          <p class="note">위약금 10% · 회당 차감 적용</p>
+        </div>
+        <div class="row2">
+          <label class="field">
+            <span class="field-label">결제금액</span>
+            <div class="inline">
+              <input id="r-paid" inputmode="numeric" autocomplete="off" placeholder="예: 264,000">
+              <span class="suffix">원</span>
+            </div>
+            <span class="help">현금가 · 카드가 · 이벤트가 그대로 입력</span>
+          </label>
+          <label class="field">
+            <span class="field-label">사용 횟수</span>
+            <div class="inline">
+              <input id="r-used" type="number" min="0" step="1" value="0" inputmode="numeric">
+              <span class="suffix">회</span>
+            </div>
+            <span class="help">총 <span id="r-total">—</span> 기준</span>
+          </label>
+        </div>
+      </section>
+    </div>
+
+    <aside>
+      <section class="result" id="result-date">
+        <p class="result-eyebrow">만료일</p>
+        <p class="result-big is-empty" id="d-expiry">—</p>
+        <p class="result-sub" id="d-sub">시작일을 선택하면 계산됩니다</p>
+        <dl class="rows">
+          <div class="row"><dt>시작일</dt><dd id="d-start-text">—</dd></div>
+          <div class="row"><dt>기간</dt><dd id="d-period-text">—</dd></div>
+          <div class="row"><dt>총 이용일수</dt><dd id="d-days">—</dd></div>
+        </dl>
+        <button class="btn" id="d-copy" type="button" disabled>안내 문구 복사</button>
+        <div class="toast" id="d-toast">복사했습니다</div>
+      </section>
+
+      <section class="result" id="result-refund" hidden>
+        <p class="result-eyebrow">최종 환불금액</p>
+        <p class="result-big is-empty" id="r-refund">—</p>
+        <p class="result-sub" id="r-sub">결제금액을 입력하면 계산됩니다</p>
+        <dl class="rows">
+          <div class="row"><dt>결제금액</dt><dd id="r-paid-text">—</dd></div>
+          <div class="row"><dt>위약금 (10%)</dt><dd id="r-penalty">—</dd></div>
+          <div class="row"><dt>사용 차감</dt><dd id="r-usage">—</dd></div>
+          <div class="row"><dt>잔여 횟수</dt><dd id="r-remaining">—</dd></div>
+        </dl>
+        <button class="btn" id="r-copy" type="button" disabled>환불 내역 복사</button>
+        <div class="toast" id="r-toast">복사했습니다</div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  const WEEKDAY_FULL = {월:"월요일", 화:"화요일", 수:"수요일", 목:"목요일", 금:"금요일", 토:"토요일", 일:"일요일"};
+  const GROUP_RATE = 22000, PERSONAL_RATE = 77000;
+
+  const $ = (id) => document.getElementById(id);
+  const chipsEl = $("chips-wrap"), rateNote = $("rate-note"), customBox = $("custom"), customToggle = $("custom-toggle");
+  const dStart = $("d-start"), dPeriod = $("d-period");
+  const rPaid = $("r-paid"), rUsed = $("r-used"), rTotal = $("r-total");
+  const dCopy = $("d-copy"), rCopy = $("r-copy");
+
+  let PRESETS = [];
+  let tab = "date";
+  let guideText = "", receiptText = "";
+
+  const state = {kind: "group", presetId: "g12", unit: "months", value: 2, sessions: 12};
+
+  const won = (n) => Number(n).toLocaleString("ko-KR") + "원";
+  const pad = (n) => String(n).padStart(2, "0");
+  const todayISO = () => { const d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); };
+
+  function hasBridge() { return !!(window.pywebview && window.pywebview.api); }
+
+  async function callApi(name, payload) {
+    if (hasBridge()) {
+      const fn = window.pywebview.api[name];
+      if (!fn) return {ok: false, error: "계산기를 불러오지 못했습니다."};
+      return payload === undefined ? await fn() : await fn(payload);
+    }
+    const res = await fetch("/api/" + name, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload || {})
+    });
+    return await res.json();
+  }
+
+  function membership() {
+    if (state.presetId) {
+      const p = PRESETS.find((x) => x.id === state.presetId);
+      if (p) {
+        return {
+          label: p.label, unit: p.period_unit, value: p.period_value, sessions: p.sessions,
+          perSession: p.per_session, periodText: p.period_label, kind: p.kind, custom: false
+        };
+      }
+    }
+    const kindLabel = state.kind === "group" ? "6:1 그룹" : "1:1 개인";
+    const unitText = state.unit === "months" ? "개월" : "주";
+    return {
+      label: kindLabel + " 직접 입력", unit: state.unit, value: state.value, sessions: state.sessions,
+      perSession: state.kind === "group" ? GROUP_RATE : PERSONAL_RATE,
+      periodText: state.value + unitText, kind: state.kind, custom: true
+    };
+  }
+
+  function renderChips() {
+    const blocks = [{kind: "group", title: "6:1 그룹"}, {kind: "personal", title: "1:1 개인"}];
+    chipsEl.innerHTML = blocks.map((b) => {
+      const list = PRESETS.filter((p) => p.kind === b.kind);
+      if (!list.length) return "";
+      const items = list.map((p) =>
+        '<button type="button" class="chip' + (state.presetId === p.id ? " is-active" : "") + '" data-id="' + p.id + '">' +
+        "<b>" + p.sessions + "회</b><span>" + p.period_label + " · " + won(p.price) + "</span></button>"
+      ).join("");
+      return '<p class="chips-label">' + b.title + "</p><div class=\"chips\">" + items + "</div>";
+    }).join("");
+    const m = membership();
+    const kindLabel = m.kind === "group" ? "6:1 그룹" : "1:1 개인";
+    rateNote.textContent = kindLabel + " · 회당 " + won(m.perSession) + " 차감";
+  }
+
+  function syncCustomInputs() {
+    $("c-kind").value = state.kind;
+    $("c-value").value = state.value;
+    $("c-unit").value = state.unit;
+    $("c-sessions").value = state.sessions;
+  }
+
+  function setCustomMode(on) {
+    if (on) {
+      state.presetId = null;
+      customBox.hidden = false;
+      customToggle.textContent = "프리셋으로 돌아가기";
+      syncCustomInputs();
+    } else {
+      state.presetId = (PRESETS.find((p) => p.kind === state.kind) || PRESETS[0] || {}).id || null;
+      customBox.hidden = true;
+      customToggle.textContent = "직접 입력";
+    }
+    renderChips();
+    refresh();
+  }
+
+  async function refreshDate() {
+    const m = membership();
+    dPeriod.textContent = m.periodText;
+    const label = m.custom ? m.label + " " + m.periodText : m.label;
+    const out = await callApi("date_calc", {start: dStart.value, value: m.value, unit: m.unit, label: label});
+    const big = $("d-expiry"), sub = $("d-sub");
+
+    if (!out || !out.ok) {
+      big.textContent = "—"; big.classList.add("is-empty");
+      sub.textContent = (out && out.error) || "날짜를 불러오지 못했습니다.";
+      sub.classList.add("is-error");
+      $("d-start-text").textContent = "—";
+      $("d-period-text").textContent = m.periodText;
+      $("d-days").textContent = "—";
+      guideText = ""; dCopy.disabled = true;
+      return;
+    }
+    big.textContent = out.expiry;
+    big.classList.remove("is-empty");
+    sub.textContent = WEEKDAY_FULL[out.expiry_weekday] || "";
+    sub.classList.remove("is-error");
+    $("d-start-text").textContent = out.start_text;
+    $("d-period-text").textContent = m.periodText;
+    $("d-days").textContent = out.total_days + "일";
+    guideText = out.guide_text;
+    dCopy.disabled = false;
+  }
+
+  function resetRefund(subText) {
+    const big = $("r-refund"), sub = $("r-sub");
+    big.textContent = "—"; big.classList.add("is-empty"); big.classList.remove("is-refund");
+    sub.textContent = subText;
+    sub.classList.remove("is-error");
+    $("r-paid-text").textContent = "—";
+    $("r-penalty").textContent = "—";
+    $("r-usage").textContent = "—";
+    $("r-remaining").textContent = "—";
+    receiptText = ""; rCopy.disabled = true;
+  }
+
+  async function refreshRefund() {
+    const m = membership();
+    rTotal.textContent = m.sessions + "회";
+    const digits = rPaid.value.replace(/[^\d]/g, "");
+    if (!digits) { resetRefund("결제금액을 입력하면 계산됩니다."); return; }
+
+    const out = await callApi("refund_calc", {
+      paid: digits, used: rUsed.value === "" ? "0" : rUsed.value,
+      per_session: m.perSession, sessions: m.sessions, label: m.label
+    });
+    const big = $("r-refund"), sub = $("r-sub");
+    if (!out || !out.ok) {
+      big.textContent = "—"; big.classList.add("is-empty"); big.classList.remove("is-refund");
+      sub.textContent = (out && out.error) || "계산하지 못했습니다.";
+      sub.classList.add("is-error");
+      $("r-paid-text").textContent = won(Number(digits));
+      $("r-penalty").textContent = "—";
+      $("r-usage").textContent = "—";
+      $("r-remaining").textContent = "—";
+      receiptText = ""; rCopy.disabled = true;
+      return;
+    }
+    big.textContent = out.refund_text;
+    big.classList.remove("is-empty");
+    big.classList.toggle("is-refund", out.refundable);
+    sub.classList.remove("is-error");
+    sub.textContent = out.refundable
+      ? out.used + "회 사용 · " + out.remaining_sessions + "회 남음"
+      : "차감 합계가 결제금액을 넘어 환불금액이 없습니다.";
+    $("r-paid-text").textContent = out.paid_text;
+    $("r-penalty").textContent = out.penalty_text;
+    $("r-usage").innerHTML = out.usage_text + '<span class="row-sub">' + out.usage_detail + "</span>";
+    $("r-remaining").textContent = out.remaining_sessions === null ? "—" : out.remaining_sessions + "회";
+    receiptText = out.receipt_text;
+    rCopy.disabled = false;
+  }
+
+  function refresh() {
+    if (tab === "date") { refreshDate(); } else { refreshRefund(); }
+  }
+
+  async function copyText(text, toastEl) {
+    if (!text) return;
+    let done = false;
+    if (hasBridge() && window.pywebview.api.copy) {
+      try { done = await window.pywebview.api.copy(text); } catch (e) { done = false; }
+    }
+    if (!done && navigator.clipboard) {
+      try { await navigator.clipboard.writeText(text); done = true; } catch (e) { done = false; }
+    }
+    if (!done) {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { done = document.execCommand("copy"); } catch (e) { done = false; }
+      document.body.removeChild(ta);
+    }
+    toastEl.textContent = done ? "복사했습니다" : "복사하지 못했습니다";
+    toastEl.classList.add("is-shown");
+    clearTimeout(toastEl._t);
+    toastEl._t = setTimeout(() => toastEl.classList.remove("is-shown"), 1600);
+  }
+
+  function switchTab(next) {
+    tab = next;
+    document.querySelectorAll(".tab").forEach((el) => {
+      const on = el.dataset.tab === next;
+      el.classList.toggle("is-active", on);
+      el.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    $("panel-date").hidden = next !== "date";
+    $("panel-refund").hidden = next !== "refund";
+    $("result-date").hidden = next !== "date";
+    $("result-refund").hidden = next !== "refund";
+    refresh();
+  }
+
+  function bind() {
+    chipsEl.addEventListener("click", (e) => {
+      const btn = e.target.closest(".chip");
+      if (!btn) return;
+      const p = PRESETS.find((x) => x.id === btn.dataset.id);
+      if (!p) return;
+      state.kind = p.kind;
+      state.presetId = p.id;
+      customBox.hidden = true;
+      customToggle.textContent = "직접 입력";
+      renderChips();
+      refresh();
+    });
+
+    customToggle.addEventListener("click", () => setCustomMode(customBox.hidden));
+
+    $("c-kind").addEventListener("change", (e) => {
+      state.kind = e.target.value;
+      state.presetId = null;
+      renderChips();
+      refresh();
+    });
+    $("c-value").addEventListener("input", (e) => {
+      const v = parseInt(e.target.value, 10);
+      state.value = Number.isFinite(v) && v > 0 ? v : 1;
+      refresh();
+    });
+    $("c-unit").addEventListener("change", (e) => { state.unit = e.target.value; refresh(); });
+    $("c-sessions").addEventListener("input", (e) => {
+      const v = parseInt(e.target.value, 10);
+      state.sessions = Number.isFinite(v) && v > 0 ? v : 1;
+      refresh();
+    });
+
+    dStart.addEventListener("change", refreshDate);
+    dStart.addEventListener("input", refreshDate);
+    $("d-today").addEventListener("click", () => { dStart.value = todayISO(); refreshDate(); });
+
+    rPaid.addEventListener("input", (e) => {
+      const digits = e.target.value.replace(/[^\d]/g, "");
+      e.target.value = digits ? Number(digits).toLocaleString("ko-KR") : "";
+      refreshRefund();
+    });
+    rUsed.addEventListener("input", refreshRefund);
+
+    dCopy.addEventListener("click", () => copyText(guideText, $("d-toast")));
+    rCopy.addEventListener("click", () => copyText(receiptText, $("r-toast")));
+
+    document.querySelectorAll(".tab").forEach((el) => el.addEventListener("click", () => switchTab(el.dataset.tab)));
+  }
+
+  async function init() {
+    bind();
+    dStart.value = todayISO();
+    const out = await callApi("presets");
+    PRESETS = (out && out.presets) || [];
+    if (!PRESETS.length) {
+      rateNote.textContent = "회원권 정보를 불러오지 못했습니다.";
+      return;
+    }
+    if (!PRESETS.some((p) => p.id === state.presetId)) state.presetId = PRESETS[0].id;
+    renderChips();
+    switchTab("date");
+  }
+
+  let booted = false;
+  function boot() { if (booted) return; booted = true; init(); }
+  window.addEventListener("pywebviewready", boot);
+  document.addEventListener("DOMContentLoaded", () => {
+    if (!window.pywebview) boot();
+    else setTimeout(boot, 1500);
+  });
+})();
+</script>
+</body>
+</html>
