@@ -13,7 +13,9 @@ from __future__ import annotations
 import json
 import os
 import sys
+import tempfile
 import threading
+import time
 import urllib.request
 import webbrowser
 
@@ -117,41 +119,156 @@ def save_state(**values) -> dict:
 # 클립보드
 # ---------------------------------------------------------------------------
 
+CLIPBOARD_OPEN_RETRIES = 3
+CLIPBOARD_RETRY_SLEEP = 0.03
+CF_UNICODETEXT = 13
+GMEM_MOVEABLE = 0x0002
+CREATE_NO_WINDOW = 0x08000000
 
-def set_clipboard(text: str) -> bool:
-    text = text or ""
-    if sys.platform == "win32":
+
+def _clipboard_payload(text: str) -> bytes:
+    """CF_UNICODETEXT 는 UTF-16LE + 널 종료다."""
+    return str(text).encode("utf-16-le") + b"\x00\x00"
+
+
+def _set_clipboard_win32(text: str) -> bool:
+    """Win32 클립보드에 UTF-16 문자열을 바로 넣는다.
+
+    ctypes 의 기본 인자 타입은 32비트 int 라서, 64비트 윈도우에서는 핸들(포인터)이
+    잘려 GlobalLock·GlobalUnlock·SetClipboardData 가 조용히 실패했다. 그러면 복사
+    버튼을 눌러도 클립보드가 비어 있거나 이전 내용 그대로였다. 모든 Win32 함수의
+    argtypes/restype 을 정확히 지정해 포인터가 잘리지 않게 한다.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.WinDLL("user32", use_last_error=True)
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+        user32.OpenClipboard.argtypes = [wintypes.HWND]
+        user32.OpenClipboard.restype = wintypes.BOOL
+        user32.EmptyClipboard.argtypes = []
+        user32.EmptyClipboard.restype = wintypes.BOOL
+        user32.CloseClipboard.argtypes = []
+        user32.CloseClipboard.restype = wintypes.BOOL
+        user32.SetClipboardData.argtypes = [wintypes.UINT, wintypes.HANDLE]
+        user32.SetClipboardData.restype = wintypes.HANDLE
+
+        kernel32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
+        kernel32.GlobalAlloc.restype = wintypes.HANDLE
+        kernel32.GlobalLock.argtypes = [wintypes.HANDLE]
+        kernel32.GlobalLock.restype = ctypes.c_void_p
+        kernel32.GlobalUnlock.argtypes = [wintypes.HANDLE]
+        kernel32.GlobalUnlock.restype = wintypes.BOOL
+        kernel32.GlobalFree.argtypes = [wintypes.HANDLE]
+        kernel32.GlobalFree.restype = wintypes.HANDLE
+    except Exception:
+        return False
+
+    data = _clipboard_payload(text)
+
+    # 다른 앱이 클립보드를 잠깐 잡고 있을 수 있어 짧게 몇 번 다시 시도한다.
+    opened = False
+    for _ in range(CLIPBOARD_OPEN_RETRIES):
         try:
-            import ctypes
-            from ctypes import wintypes
+            if user32.OpenClipboard(None):
+                opened = True
+                break
+        except Exception:
+            return False
+        time.sleep(CLIPBOARD_RETRY_SLEEP)
+    if not opened:
+        return False
 
-            user32 = ctypes.windll.user32
-            kernel32 = ctypes.windll.kernel32
-            kernel32.GlobalAlloc.restype = ctypes.c_void_p
-            kernel32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
-            kernel32.GlobalLock.restype = ctypes.c_void_p
-            kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
-            user32.SetClipboardData.restype = ctypes.c_void_p
-            user32.SetClipboardData.argtypes = [wintypes.UINT, ctypes.c_void_p]
-
-            data = text.encode("utf-16-le") + b"\x00\x00"
-            if not user32.OpenClipboard(None):
-                raise OSError("OpenClipboard 실패")
+    handle = None
+    try:
+        if not user32.EmptyClipboard():
+            return False
+        handle = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(data))
+        if not handle:
+            return False
+        ptr = kernel32.GlobalLock(handle)
+        if not ptr:
+            return False
+        try:
+            ctypes.memmove(ptr, data, len(data))
+        finally:
+            kernel32.GlobalUnlock(handle)
+        if not user32.SetClipboardData(CF_UNICODETEXT, handle):
+            return False
+        # 성공하면 클립보드가 이 메모리를 넘겨받는다(여기서 직접 해제하면 안 된다).
+        handle = None
+        return True
+    except Exception:
+        return False
+    finally:
+        if handle:
             try:
-                user32.EmptyClipboard()
-                handle = kernel32.GlobalAlloc(0x0002, len(data))  # GMEM_MOVEABLE
-                if not handle:
-                    raise OSError("GlobalAlloc 실패")
-                ptr = kernel32.GlobalLock(handle)
-                ctypes.memmove(ptr, data, len(data))
-                kernel32.GlobalUnlock(handle)
-                if not user32.SetClipboardData(13, handle):  # CF_UNICODETEXT
-                    raise OSError("SetClipboardData 실패")
-            finally:
-                user32.CloseClipboard()
-            return True
+                kernel32.GlobalFree(handle)
+            except Exception:
+                pass
+        try:
+            user32.CloseClipboard()
         except Exception:
             pass
+
+
+def _set_clipboard_powershell(text: str) -> bool:
+    """ctypes 경로가 막힌 윈도우를 위한 마지막 수단.
+
+    `clip.exe` 는 콘솔 코드페이지(cp949)로 해석해 한글이 깨지기 쉬워 쓰지 않는다.
+    UTF-8 파일로 떨어 두고 PowerShell 이 그 파일을 읽어 Set-Clipboard 하게 한다.
+    """
+    if sys.platform != "win32":
+        return False
+    path = None
+    try:
+        import subprocess
+
+        fd, path = tempfile.mkstemp(suffix=".txt", prefix="pilatescalc-")
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as fp:
+            fp.write(text)
+        literal = path.replace("'", "''")
+        script = (
+            "$ErrorActionPreference='Stop';"
+            f"Get-Content -LiteralPath '{literal}' -Raw -Encoding UTF8 | Set-Clipboard"
+        )
+        completed = subprocess.run(
+            [
+                "powershell",
+                "-NoProfile",
+                "-NonInteractive",
+                "-WindowStyle",
+                "Hidden",
+                "-Command",
+                script,
+            ],
+            capture_output=True,
+            timeout=15,
+            creationflags=CREATE_NO_WINDOW,
+        )
+        return completed.returncode == 0
+    except Exception:
+        return False
+    finally:
+        if path:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+
+def set_clipboard(text: str) -> bool:
+    text = "" if text is None else str(text)
+    if not text:
+        return False
+
+    if sys.platform == "win32":
+        if _set_clipboard_win32(text):
+            return True
+        if _set_clipboard_powershell(text):
+            return True
 
     try:
         import tkinter

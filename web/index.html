@@ -717,22 +717,45 @@
     toastEl._t = setTimeout(() => toastEl.classList.remove("is-shown"), 1600);
   }
 
-  async function copyText(text) {
-    if (!text) return;
-    let done = false;
-    const api = bridge();
-    if (api && api.copy) {
-      try { done = await api.copy(text); } catch (e) { done = false; }
+  // 예전 WebView2·권한 제한에서도 동작하는 클립보드 복사(숨은 textarea + execCommand).
+  function legacyCopy(text) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      ta.style.left = "0";
+      ta.style.opacity = "0";
+      ta.style.userSelect = "text";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return !!ok;
+    } catch (e) {
+      return false;
     }
-    if (!done && navigator.clipboard) {
+  }
+
+  async function copyText(text) {
+    text = text == null ? "" : String(text);
+    if (!text.trim()) { showToast("복사할 내용이 없습니다"); return; }
+    let done = false;
+    // 1) 버튼 클릭(사용자 제스처) 직후에는 WebView2 의 비동기 클립보드 API가 가장 확실하다.
+    if (navigator.clipboard && navigator.clipboard.writeText) {
       try { await navigator.clipboard.writeText(text); done = true; } catch (e) { done = false; }
     }
+    // 2) 권한·포커스 문제로 1)이 막히면 예전 방식으로 한 번 더.
+    if (!done) done = legacyCopy(text);
+    // 3) 마지막으로 앱(파이썬) 쪽 Win32 클립보드.
     if (!done) {
-      const ta = document.createElement("textarea");
-      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-      document.body.appendChild(ta); ta.select();
-      try { done = document.execCommand("copy"); } catch (e) { done = false; }
-      document.body.removeChild(ta);
+      const api = bridge();
+      if (api && typeof api.copy === "function") {
+        try { done = !!(await api.copy(text)); } catch (e) { done = false; }
+      }
     }
     showToast(done ? "복사했습니다" : "복사하지 못했습니다");
   }

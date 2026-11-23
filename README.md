@@ -14,6 +14,7 @@
 
 윈도우 11에는 필요한 **WebView2 런타임**이 기본 탑재되어 있습니다. 윈도우 10에서 창이 비어 있으면
 [WebView2 런타임](https://developer.microsoft.com/microsoft-edge/webview2/)을 설치해 주세요.
+바탕화면 아이콘이 예전 모양으로 보이면 아이콘 캐시가 남은 것이라, 설치 파일로 업데이트하면 설치 마지막에 자동으로 새로고칩니다(직접은 `ie4uinit.exe -show`).
 
 ## 위젯 사용
 
