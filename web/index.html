@@ -23,7 +23,7 @@
   }
   /* ---------- 상단 미니 헤더 (드래그 영역) ---------- */
   .bar{
-    height:42px; display:flex; align-items:center; gap:6px; padding:0 8px 0 14px;
+    height:42px; display:flex; align-items:center; gap:5px; padding:0 6px 0 12px;
     background:transparent; -webkit-app-region:drag;
   }
   .bar h1{
@@ -36,7 +36,7 @@
     margin-left:auto; -webkit-app-region:no-drag;
   }
   .seg-btn{
-    border:0; background:transparent; border-radius:999px; padding:5px 13px; font:inherit;
+    border:0; background:transparent; border-radius:999px; padding:5px 11px; font:inherit;
     font-size:11px; font-weight:600; color:#6B6F7C; cursor:pointer; white-space:nowrap;
     transition:background .14s,color .14s,box-shadow .14s;
   }
@@ -64,6 +64,8 @@
     height:calc(100% - 42px); padding:2px 12px 11px; display:flex; flex-direction:column;
     gap:9px; overflow:hidden;
   }
+  main > .result{flex:1 1 0;}
+  main > #membership{flex:1 1 0; display:flex; flex-direction:column;}
   .card{
     background:var(--card); border:1px solid var(--line); border-radius:16px;
     padding:11px 13px; box-shadow:var(--shadow);
@@ -71,28 +73,6 @@
   .card-head{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:8px;}
   .card-title{font-size:12px; font-weight:700; letter-spacing:-.02em; color:var(--ink);}
   .hint{font-size:9.5px; color:var(--danger); font-weight:600;}
-  .lbl{font-size:10.5px; color:var(--label); letter-spacing:-.01em;}
-  .lbl b{color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums;}
-  .sec{margin:0 0 6px;}
-  .pills{display:grid; grid-template-columns:repeat(4,1fr); gap:5px;}
-  .pills.three{grid-template-columns:repeat(3,1fr);}
-  .pill{
-    border:1px solid #E7E9F0; background:#FAFBFD; border-radius:9px; padding:6px 0;
-    font:inherit; font-size:11.5px; font-weight:600; color:#4A4E5A; cursor:pointer;
-    font-variant-numeric:tabular-nums;
-    transition:border-color .12s,background .12s,color .12s,box-shadow .12s;
-  }
-  .pill:hover{border-color:#CFD2E0; color:var(--ink);}
-  .pill.is-active{
-    border-color:var(--accent); background:var(--accent-tint); color:var(--accent-dark);
-    font-weight:700; box-shadow:0 1px 3px rgba(91,95,233,.16);
-  }
-  .foot{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px;}
-  .sel-note{font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-  .link{border:0; background:transparent; padding:0; font:inherit; font-size:10.5px; font-weight:600; color:var(--accent); cursor:pointer; white-space:nowrap;}
-  .link:hover{color:var(--accent-dark); text-decoration:underline; text-underline-offset:3px;}
-  .custom{margin-top:9px; padding-top:9px; border-top:1px solid var(--line); display:grid; gap:7px;}
-  .custom.is-flush{margin-top:7px; padding-top:0; border-top:0;}
   .inline{display:flex; align-items:center; gap:6px;}
   input,select{
     width:100%; font:inherit; font-size:12px; color:inherit; background:#FBFBFE; border:1px solid #E3E6EE;
@@ -102,28 +82,29 @@
   input::placeholder{color:#B4B7C2;}
   input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   input[type=number]{-moz-appearance:textfield;appearance:textfield;}
-  .suffix{font-size:10.5px; color:var(--muted2); white-space:nowrap;}
   .ghost{
     border:0; background:var(--track); border-radius:10px; padding:9px 12px; font:inherit;
     font-size:11px; font-weight:600; color:#4A4E5A; cursor:pointer; white-space:nowrap;
     transition:background .12s,color .12s;
   }
   .ghost:hover{background:#E8EAF2; color:var(--ink);}
-  .duo{display:grid; grid-template-columns:1.35fr 1fr; gap:6px;}
 
-  /* ---------- 만료일 탭: 종류별 기간 스테퍼 ---------- */
-  .rows{display:grid; gap:7px;}
+  /* ---------- 회원권 카드: 두 줄 스테퍼 (만료일=기간 개월·주 / 환불=사용 횟수 회) ---------- */
+  .rows{display:grid; gap:7px; flex:1 1 auto; min-height:0; grid-auto-rows:1fr;}
   .mrow{
     border:1px solid #E7E9F0; background:#FAFBFD; border-radius:12px; padding:7px 9px 8px;
-    display:grid; gap:6px; transition:border-color .12s,background .12s,box-shadow .12s;
+    display:grid; gap:6px; align-content:center;
+    transition:border-color .12s,background .12s,box-shadow .12s;
   }
   .mrow.is-active{border-color:var(--accent); background:var(--accent-tint); box-shadow:0 1px 3px rgba(91,95,233,.16);}
-  .mrow-head{display:flex; align-items:center; gap:6px; min-width:0;}
+  .mrow-head{display:flex; align-items:center; gap:6px; min-width:0; min-height:21px;}
   .mkind{font-size:10.5px; font-weight:700; color:#4A4E5A; letter-spacing:-.01em; white-space:nowrap;}
   .mrow.is-active .mkind{color:var(--accent-dark);}
-  .chips{display:flex; gap:4px; margin-left:auto;}
+  .mrate{font-size:10px; font-weight:600; color:var(--muted); letter-spacing:-.01em; white-space:nowrap;}
+  .mrow.is-active .mrate{color:var(--accent);}
+  .chips{display:flex; gap:3px; margin-left:auto;}
   .chip{
-    border:1px solid #E3E6EE; background:#fff; border-radius:999px; padding:2px 8px; font:inherit;
+    border:1px solid #E3E6EE; background:#fff; border-radius:999px; padding:2px 7px; font:inherit;
     font-size:10px; font-weight:600; color:#5A5F6E; cursor:pointer; font-variant-numeric:tabular-nums;
     transition:border-color .12s,color .12s;
   }
@@ -137,7 +118,7 @@
   }
   .step:hover{background:#F2F3FA; border-color:#CFD2E0; color:var(--ink);}
   .step:disabled{color:#C9CCD6; cursor:default; background:#F7F8FC; border-color:#EDEFF5;}
-  /* 가운데 입력 박스: 숫자와 단위(개월/주)가 한 상자 안에 들어간다 */
+  /* 가운데 입력 박스: 숫자와 단위(개월/주/회)가 한 상자 안에 들어간다 */
   .numbox{
     position:relative; flex:1 1 auto; min-width:0; height:30px; display:flex; align-items:center;
     justify-content:center; gap:4px; padding:0 10px; cursor:text;
@@ -173,14 +154,16 @@
   .sub{margin:4px 0 0; font-size:10.5px; color:var(--muted); min-height:15px;}
   .sub.is-error{color:var(--danger);}
   .kpis{
-    margin:9px 0 9px; display:grid; grid-template-columns:1fr 1fr; gap:6px;
+    margin:8px 0 8px; display:grid; grid-template-columns:1fr 1fr; gap:6px;
     overflow-y:auto; min-height:0; scrollbar-width:thin; align-content:start;
   }
   .kpis:empty{display:none;}
   .kpis::-webkit-scrollbar{width:4px;}
   .kpis::-webkit-scrollbar-thumb{background:#DFE1EA; border-radius:4px;}
   .kpis.is-single{grid-template-columns:1fr;}
+  .kpis.is-three{grid-template-columns:repeat(3,1fr);}
   .kpi{background:#F4F5FB; border-radius:11px; padding:6px 9px; min-width:0;}
+  .kpis.is-three .kpi{padding:6px 8px;}
   .kpi .k{
     display:block; font-size:9px; font-weight:700; color:var(--accent); line-height:1.3;
     letter-spacing:.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -189,24 +172,24 @@
     display:block; font-size:13px; font-weight:700; color:var(--ink); line-height:1.3;
     letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap;
   }
+  .kpis.is-three .kpi .v{font-size:12px; letter-spacing:-.03em;}
   .kpi .s{display:block; font-size:8.5px; color:#9A9DA7; line-height:1.3; white-space:nowrap; font-variant-numeric:tabular-nums;}
   .copy{
     margin-top:0; width:100%; border:0; border-radius:12px; padding:10px; background:var(--accent);
     color:#fff; font:inherit; font-size:12px; font-weight:700; letter-spacing:-.01em; cursor:pointer;
     box-shadow:0 7px 16px rgba(91,95,233,.28); transition:background .12s,box-shadow .12s;
   }
+  /* 결제금액 입력 줄: 입력 칸 + 복사 버튼을 한 줄에 */
+  .payrow{display:flex; align-items:center; gap:6px;}
+  .payrow .copy{
+    flex:0 0 auto; width:auto; height:36px; padding:0 13px; border-radius:10px;
+    font-size:11.5px; box-shadow:0 4px 12px rgba(91,95,233,.24);
+  }
   .copy:hover{background:var(--accent-dark); box-shadow:0 7px 16px rgba(79,70,229,.32);}
   .copy:disabled{background:#E8EAF2; color:#A7AAB5; cursor:default; box-shadow:none;}
-  /* 결과 카드 안: 시작일 줄 */
+  /* 결과 카드 안: 시작일·결제금액 줄 */
   .startblock{margin-top:10px; padding-top:10px; border-top:1px solid var(--line);}
-  .startlbl{display:block; font-size:10px; font-weight:600; color:var(--label); margin-bottom:6px; letter-spacing:-.01em;}
-
-  /* 탭별 카드 순서 — 만료일: 결과 카드가 맨 위 / 환불: 회원권 → 결제금액 → 결과 */
-  main.is-date #result-panel{order:1;}
-  main.is-date #membership{order:2;}
-  main.is-refund #membership{order:1;}
-  main.is-refund #panel-refund{order:2;}
-  main.is-refund #result-panel{order:3;}
+  .startlbl{display:block; font-size:10px; font-weight:600; color:var(--label); margin-bottom:8px; letter-spacing:-.01em;}
 
   .toast{
     position:fixed; left:50%; bottom:14px; transform:translate(-50%,6px); background:#1C1D24; color:#fff;
@@ -218,12 +201,12 @@
   /* 창을 최소 높이까지 줄였을 때 */
   @media (max-height:520px){
     main{padding:0 10px 10px; gap:8px; overflow-y:auto;}
+    main > .result, main > #membership{flex:0 0 auto;}
     .card{padding:10px 11px;}
-    .pill{padding:4px 0; font-size:11px;}
-    .result{flex:0 0 auto;}
     .big{font-size:25px;}
     .kpis{overflow:visible;}
     .copy{padding:9px;}
+    .payrow .copy{padding:0 13px;}
   }
 </style>
 </head>
@@ -255,6 +238,7 @@
         <p class="big is-empty" id="big">—</p>
         <p class="sub" id="sub">시작일을 선택하세요</p>
       </div>
+      <div class="kpis" id="facts"></div>
       <div class="startblock" id="panel-date">
         <span class="startlbl">시작일</span>
         <div class="inline">
@@ -262,8 +246,13 @@
           <button class="ghost" id="d-today" type="button">오늘</button>
         </div>
       </div>
-      <div class="kpis" id="facts"></div>
-      <button class="copy" id="copy" type="button" disabled>안내 문구 복사</button>
+      <div class="startblock" id="panel-refund" hidden>
+        <span class="startlbl">결제금액</span>
+        <div class="payrow">
+          <input id="r-paid" inputmode="numeric" autocomplete="off" placeholder="예: 264,000">
+          <button class="copy" id="copy" type="button" disabled hidden>환불 내역 복사</button>
+        </div>
+      </div>
     </section>
 
     <section class="card" id="membership">
@@ -301,47 +290,32 @@
           </div>
         </div>
       </div>
-      <div class="presets" id="presets-block" hidden>
-        <p class="lbl sec">6:1 그룹<span id="rate-group-slot" hidden> · 회당 <b id="rate-group">22,000원</b></span></p>
-        <div class="pills" id="pills-group"></div>
-        <p class="lbl sec" style="margin:8px 0 6px;">1:1 개인<span id="rate-personal-slot" hidden> · 회당 <b id="rate-personal">77,000원</b></span></p>
-        <div class="pills three" id="pills-personal"></div>
-      </div>
-      <div class="foot" id="presets-foot" hidden>
-        <span class="sel-note" id="sel-note"></span>
-        <button class="link" id="custom-toggle" type="button">직접 입력</button>
-      </div>
-      <div class="custom" id="custom" hidden>
-        <select id="c-kind">
-          <option value="group">6:1 그룹</option>
-          <option value="personal">1:1 개인</option>
-        </select>
-        <div class="duo">
-          <div class="inline">
-            <input id="c-value" type="number" min="1" step="1" value="2" inputmode="numeric">
-            <select id="c-unit" style="width:76px;"><option value="months">개월</option><option value="weeks">주</option></select>
+      <div class="rows" id="refund-block" hidden>
+        <div class="mrow" data-rkind="group">
+          <div class="mrow-head">
+            <span class="mkind">6:1 그룹<span class="mrate"> · 회당 22,000원</span></span>
           </div>
-          <div class="inline">
-            <input id="c-sessions" type="number" min="1" step="1" value="12" inputmode="numeric">
-            <span class="suffix">회</span>
+          <div class="stepper">
+            <button class="step" type="button" data-rkind="group" data-step="-1" aria-label="그룹 사용 횟수 줄이기">−</button>
+            <label class="numbox">
+              <input class="stepnum" data-rkind="group" type="number" min="0" max="99" step="1" inputmode="numeric" value="0" aria-label="그룹 사용 횟수(회)">
+              <span class="unit">회</span>
+            </label>
+            <button class="step" type="button" data-rkind="group" data-step="1" aria-label="그룹 사용 횟수 늘리기">+</button>
           </div>
         </div>
-      </div>
-    </section>
-
-    <section class="card" id="panel-refund" hidden>
-      <div class="card-head">
-        <span class="card-title">결제금액 · 사용 횟수</span>
-        <span class="lbl" id="r-total">총 12회</span>
-      </div>
-      <div class="duo">
-        <div class="inline">
-          <input id="r-paid" inputmode="numeric" autocomplete="off" placeholder="결제금액">
-          <span class="suffix">원</span>
-        </div>
-        <div class="inline">
-          <input id="r-used" type="number" min="0" step="1" value="0" inputmode="numeric">
-          <span class="suffix">회</span>
+        <div class="mrow" data-rkind="personal">
+          <div class="mrow-head">
+            <span class="mkind">1:1 개인<span class="mrate"> · 회당 77,000원</span></span>
+          </div>
+          <div class="stepper">
+            <button class="step" type="button" data-rkind="personal" data-step="-1" aria-label="개인 사용 횟수 줄이기">−</button>
+            <label class="numbox">
+              <input class="stepnum" data-rkind="personal" type="number" min="0" max="99" step="1" inputmode="numeric" value="0" aria-label="개인 사용 횟수(회)">
+              <span class="unit">회</span>
+            </label>
+            <button class="step" type="button" data-rkind="personal" data-step="1" aria-label="개인 사용 횟수 늘리기">+</button>
+          </div>
         </div>
       </div>
     </section>
@@ -354,31 +328,28 @@
   const GROUP_RATE = 22000, PERSONAL_RATE = 77000;
 
   const $ = (id) => document.getElementById(id);
-  const pillsGroup = $("pills-group"), pillsPersonal = $("pills-personal"), selNote = $("sel-note");
   const chipsGroup = $("chips-group"), chipsPersonal = $("chips-personal");
-  const presetsBlock = $("presets-block"), footEl = $("presets-foot"), dateBlock = $("date-block");
-  const labelEl = $("r-label");
-  const rateGroup = $("rate-group"), ratePersonal = $("rate-personal");
-  const rateGroupSlot = $("rate-group-slot"), ratePersonalSlot = $("rate-personal-slot");
-  const kindSel = $("c-kind");
-  const rateNote = $("rate-note"), customBox = $("custom"), customToggle = $("custom-toggle");
-  const dStart = $("d-start"), rPaid = $("r-paid"), rUsed = $("r-used"), rTotal = $("r-total");
+  const dateBlock = $("date-block"), refundBlock = $("refund-block");
+  const labelEl = $("r-label"), rateNote = $("rate-note");
+  const dStart = $("d-start"), rPaid = $("r-paid");
   const bigEl = $("big"), subEl = $("sub"), kpisEl = $("facts"), copyBtn = $("copy"), toastEl = $("toast");
 
   const KIND_LABEL = {group: "6:1 그룹", personal: "1:1 개인"};
   const KIND_UNIT = {group: "months", personal: "weeks"};
+  const KIND_RATE = {group: GROUP_RATE, personal: PERSONAL_RATE};
   const UNIT_SYMBOL = {months: "개월", weeks: "주"};
   const kindLabel = (kind) => KIND_LABEL[kind] || "";
   const unitSymbol = (unit) => UNIT_SYMBOL[unit] || "";
 
   let PRESETS = [];
   let tab = "date";
-  let guideText = "", receiptText = "";
-  // 만료일 탭은 종류별 기간 스테퍼 두 줄을 늘 보여 주고, 선택된 종류(state.kind)의 기간으로 만료일을 계산한다.
+  let receiptText = "";
+  // 만료일 탭: 종류별 기간(개월·주) 스테퍼 / 환불 탭: 종류별 사용 횟수(회) 스테퍼
   const state = {
-    kind: "group", presetId: "g12", unit: "months", value: 2, sessions: 12, customMode: false,
+    kind: "group", presetId: "g12", unit: "months", value: 2, sessions: 12,
     rows: {group: 2, personal: 10},
     lastSessions: {group: 12, personal: 15},
+    refundKind: "group", used: {group: 0, personal: 0},
   };
 
   const won = (n) => Number(n).toLocaleString("ko-KR") + "원";
@@ -408,15 +379,8 @@
     return {
       label: p ? p.label : kindLabel(state.kind),
       unit: state.unit, value: state.value, sessions: state.sessions,
-      perSession: p ? p.per_session : (state.kind === "group" ? GROUP_RATE : PERSONAL_RATE),
-      periodText: state.value + unitSymbol(state.unit), price: p ? p.price : null,
-      kind: state.kind, custom: !p,
+      periodText: state.value + unitSymbol(state.unit),
     };
-  }
-
-  function pillHtml(p) {
-    return '<button type="button" class="pill' + (state.presetId === p.id ? " is-active" : "") +
-      '" data-id="' + p.id + '">' + p.sessions + "회</button>";
   }
 
   function chipHtml(p) {
@@ -424,26 +388,16 @@
       '" data-id="' + p.id + '">' + p.sessions + "회</button>";
   }
 
-  function renderPresets() {
-    pillsGroup.innerHTML = PRESETS.filter((p) => p.kind === "group").map(pillHtml).join("");
-    pillsPersonal.innerHTML = PRESETS.filter((p) => p.kind === "personal").map(pillHtml).join("");
+  function renderChips() {
     chipsGroup.innerHTML = PRESETS.filter((p) => p.kind === "group").map(chipHtml).join("");
     chipsPersonal.innerHTML = PRESETS.filter((p) => p.kind === "personal").map(chipHtml).join("");
-    rateGroup.textContent = won(GROUP_RATE);
-    ratePersonal.textContent = won(PERSONAL_RATE);
-    syncRateVisibility();
-    syncSteppers();
-    const m = membership();
-    // 요약 줄은 두 탭 모두 횟수·소진기간만 (정가 금액은 결제금액 입력과 헷갈리므로 표시하지 않는다)
-    selNote.textContent = m.custom
-      ? m.label + " " + m.periodText + " · " + m.sessions + "회"
-      : m.sessions + "회 · " + m.periodText;
-    rTotal.textContent = "총 " + m.sessions + "회";
+    syncDateRows();
+    syncRefundRows();
   }
 
-  // 두 줄 스테퍼를 현재 선택에 맞춘다. 선택된 종류 줄만 인디고로 강조한다.
-  function syncSteppers() {
-    document.querySelectorAll(".mrow").forEach((row) => {
+  // 만료일 탭 두 줄 스테퍼를 현재 선택에 맞춘다. 선택된 종류 줄만 인디고로 강조한다.
+  function syncDateRows() {
+    dateBlock.querySelectorAll(".mrow").forEach((row) => {
       const kind = row.dataset.kind;
       const active = state.kind === kind;
       const value = active ? state.value : state.rows[kind];
@@ -463,7 +417,7 @@
     state.sessions = p.sessions;
     state.rows[p.kind] = p.period_value;
     state.lastSessions[p.kind] = p.sessions;
-    renderPresets();
+    renderChips();
     refresh();
   }
 
@@ -476,55 +430,28 @@
     state.value = v;
     state.rows[kind] = v;
     state.sessions = state.lastSessions[kind] || state.sessions;
-    renderPresets();
+    renderChips();
     refresh();
   }
 
-  // 탭별로 보이는 블록 정리: 만료일 탭=스테퍼 두 줄, 환불 탭=프리셋·단가·직접 입력
-  function syncPanels() {
-    const isDate = tab === "date";
-    dateBlock.hidden = !isDate;
-    presetsBlock.hidden = isDate || state.customMode;
-    footEl.hidden = isDate;
-    customBox.hidden = isDate || !state.customMode;
-    customBox.classList.toggle("is-flush", state.customMode);
-    customToggle.textContent = state.customMode ? "프리셋" : "직접 입력";
+  // 환불 탭 두 줄 스테퍼: 클릭하거나 값을 조절한 줄이 선택되고, 그 줄의 회당 차감액으로 계산한다.
+  function syncRefundRows() {
+    refundBlock.querySelectorAll(".mrow").forEach((row) => {
+      const kind = row.dataset.rkind;
+      const active = state.refundKind === kind;
+      const value = state.used[kind];
+      row.classList.toggle("is-active", active);
+      const num = row.querySelector(".stepnum");
+      if (document.activeElement !== num) num.value = value;
+      row.querySelector('[data-step="-1"]').disabled = value <= 0;
+    });
   }
 
-  // 단가(회당 차감액)는 환불 탭에서만 보여준다. 만료일 탭은 금액 없이 종류만.
-  function syncRateVisibility() {
-    const show = tab === "refund";
-    rateGroupSlot.hidden = !show;
-    ratePersonalSlot.hidden = !show;
-    kindSel.options[0].textContent = "6:1 그룹" + (show ? " · 회당 " + won(GROUP_RATE) : "");
-    kindSel.options[1].textContent = "1:1 개인" + (show ? " · 회당 " + won(PERSONAL_RATE) : "");
-  }
-
-  function syncCustom() {
-    $("c-kind").value = state.kind;
-    $("c-value").value = state.value;
-    $("c-unit").value = state.unit;
-    $("c-sessions").value = state.sessions;
-  }
-
-  function setCustomMode(on) {
-    state.customMode = on;
-    if (on) {
-      state.presetId = null;
-      syncCustom();
-    } else {
-      const first = PRESETS.find((p) => p.kind === state.kind) || PRESETS[0];
-      if (first) {
-        state.presetId = first.id;
-        state.value = first.period_value;
-        state.unit = first.period_unit;
-        state.sessions = first.sessions;
-        state.rows[first.kind] = first.period_value;
-        state.lastSessions[first.kind] = first.sessions;
-      }
-    }
-    syncPanels();
-    renderPresets();
+  function setUsed(kind, value) {
+    const v = Math.min(Math.max(Math.trunc(Number(value) || 0), 0), 99);
+    state.refundKind = kind;
+    state.used[kind] = v;
+    syncRefundRows();
     refresh();
   }
 
@@ -540,18 +467,33 @@
 
   function setFacts(rows) {
     kpisEl.classList.toggle("is-single", rows.length === 1);
+    kpisEl.classList.toggle("is-three", rows.length === 3);
     kpisEl.innerHTML = rows.map((r) =>
       '<div class="kpi"><span class="k">' + r.k + '</span><span class="v">' + r.v + "</span>" +
       (r.small ? '<span class="s">' + r.small + "</span>" : "") + "</div>").join("");
   }
 
-  function emptyState(text, copyLabel) {
+  function dateEmpty(text) {
     setBig("—", {empty: true});
     setSub(text);
     setFacts([]);
-    copyBtn.textContent = copyLabel;
-    copyBtn.disabled = true;
-    guideText = receiptText = "";
+  }
+
+  // 환불 내역 KPI는 결제금액을 넣기 전에도 같은 3칸 틀을 유지한다.
+  function refundFacts(out, used, rate) {
+    if (!out) {
+      setFacts([
+        {k: "결제금액", v: "—"},
+        {k: "위약금 (10%)", v: "—"},
+        {k: "사용료", v: "—", small: used + "회 × " + won(rate)},
+      ]);
+      return;
+    }
+    setFacts([
+      {k: "결제금액", v: out.paid_text},
+      {k: "위약금 (10%)", v: out.penalty_text},
+      {k: "사용료", v: out.usage_text, small: out.usage_detail},
+    ]);
   }
 
   // 스테퍼를 빠르게 연타하면 늦게 온 응답이 화면을 덮어쓸 수 있어 마지막 요청만 반영한다.
@@ -560,14 +502,13 @@
   async function refreshDate() {
     const seq = ++calcSeq;
     const m = membership();
-    const label = m.custom ? m.label + " " + m.periodText : m.label;
+    const label = m.label;
     const out = await callApi("date_calc", {start: dStart.value, value: m.value, unit: m.unit, label: label});
     if (seq !== calcSeq) return;
     labelEl.textContent = "만료일";
-    copyBtn.textContent = "안내 문구 복사";
 
     if (!out || !out.ok) {
-      emptyState((out && out.error) || "시작일을 선택하세요", "안내 문구 복사");
+      dateEmpty((out && out.error) || "시작일을 선택하세요");
       if (out && out.error) setSub(out.error, true);
       return;
     }
@@ -575,38 +516,40 @@
     setSub((WEEKDAY_FULL[out.expiry_weekday] || "") + " · " + m.periodText);
     // 시작일은 위 카드의 날짜 입력 칸에 그대로 보이므로 KPI 박스로 또 반복하지 않는다.
     setFacts([]);
-    guideText = out.guide_text;
-    copyBtn.disabled = false;
   }
 
   async function refreshRefund() {
     const seq = ++calcSeq;
-    const m = membership();
+    const used = state.used[state.refundKind];
+    const rate = KIND_RATE[state.refundKind];
     labelEl.textContent = "최종 환불금액";
     copyBtn.textContent = "환불 내역 복사";
+
     const digits = rPaid.value.replace(/[^\d]/g, "");
-    if (!digits) { emptyState("결제금액을 입력하면 계산됩니다", "환불 내역 복사"); return; }
+    if (!digits) {
+      setBig("—", {empty: true});
+      setSub("결제금액을 입력하면 계산됩니다");
+      refundFacts(null, used, rate);
+      copyBtn.disabled = true;
+      receiptText = "";
+      return;
+    }
 
     const out = await callApi("refund_calc", {
-      paid: digits, used: rUsed.value === "" ? "0" : rUsed.value,
-      per_session: m.perSession, sessions: m.sessions, label: m.label
+      paid: digits, used: String(used), per_session: rate, label: kindLabel(state.refundKind)
     });
     if (seq !== calcSeq) return;
     if (!out || !out.ok) {
-      emptyState((out && out.error) || "계산하지 못했습니다", "환불 내역 복사");
-      if (out && out.error) setSub(out.error, true);
+      setBig("—", {empty: true});
+      setSub((out && out.error) || "계산하지 못했습니다", true);
+      refundFacts(null, used, rate);
+      copyBtn.disabled = true;
+      receiptText = "";
       return;
     }
     setBig(out.refund_text, {});
-    setSub(out.refundable
-      ? out.used + "회 사용 · " + out.remaining_sessions + "회 남음"
-      : "차감 합계가 결제금액을 넘어 환불금액이 없습니다");
-    setFacts([
-      {k: "결제금액", v: out.paid_text},
-      {k: "위약금 10%", v: out.penalty_text},
-      {k: "사용 차감", v: out.usage_text, small: out.usage_detail},
-      {k: "잔여 횟수", v: out.remaining_sessions === null ? "—" : out.remaining_sessions + "회", small: "총 " + m.sessions + "회 중"}
-    ]);
+    setSub(out.refundable ? "" : "차감 합계가 결제금액을 넘어 환불금액이 없습니다");
+    refundFacts(out, used, rate);
     receiptText = out.receipt_text;
     copyBtn.disabled = false;
   }
@@ -650,8 +593,11 @@
     document.querySelectorAll(".seg-btn").forEach((el) => el.classList.toggle("is-active", el.dataset.tab === next));
     $("panel-date").hidden = next !== "date";
     $("panel-refund").hidden = next !== "refund";
-    syncRateVisibility();
-    syncPanels();
+    dateBlock.hidden = next !== "date";
+    refundBlock.hidden = next !== "refund";
+    copyBtn.hidden = next !== "refund";
+    syncDateRows();
+    syncRefundRows();
     refresh();
   }
 
@@ -678,35 +624,36 @@
 
   function bind() {
     document.addEventListener("click", (e) => {
-      const chip = e.target.closest(".chip, .pill");
+      const chip = e.target.closest(".chip");
       if (chip) {
         const p = PRESETS.find((x) => x.id === chip.dataset.id);
-        if (p) {
-          state.customMode = false;
-          selectPreset(p);
-          syncPanels();
-        }
+        if (p) selectPreset(p);
         return;
       }
       const row = e.target.closest(".mrow");
       if (row) {
-        const kind = row.dataset.kind;
-        if (state.kind !== kind) setPeriod(kind, state.rows[kind]);
+        if (row.dataset.rkind) {
+          const kind = row.dataset.rkind;
+          if (state.refundKind !== kind) setUsed(kind, state.used[kind]);
+        } else {
+          const kind = row.dataset.kind;
+          if (state.kind !== kind) setPeriod(kind, state.rows[kind]);
+        }
         return;
       }
       const tabBtn = e.target.closest(".seg-btn");
       if (tabBtn) switchTab(tabBtn.dataset.tab);
     });
 
-    // − / + 스테퍼와 가운데 숫자칸 직접 입력 (그룹=개월, 개인=주)
-    document.querySelectorAll(".step").forEach((btn) => {
+    // 만료일 탭 − / + 스테퍼와 가운데 숫자칸 직접 입력 (그룹=개월, 개인=주)
+    dateBlock.querySelectorAll(".step").forEach((btn) => {
       btn.addEventListener("click", () => {
         const kind = btn.dataset.kind;
         const cur = state.kind === kind ? state.value : state.rows[kind];
         setPeriod(kind, cur + Number(btn.dataset.step));
       });
     });
-    document.querySelectorAll(".stepnum").forEach((input) => {
+    dateBlock.querySelectorAll(".stepnum").forEach((input) => {
       const kind = input.dataset.kind;
       input.addEventListener("focus", () => {
         if (state.kind !== kind) setPeriod(kind, state.rows[kind]);
@@ -720,25 +667,25 @@
       });
     });
 
-    customToggle.addEventListener("click", () => setCustomMode(!state.customMode));
-    $("c-kind").addEventListener("change", (e) => { state.kind = e.target.value; state.presetId = null; renderPresets(); refresh(); });
-    $("c-value").addEventListener("input", (e) => {
-      const v = parseInt(e.target.value, 10);
-      state.value = Number.isFinite(v) && v > 0 ? v : 1;
-      state.presetId = null;
-      if (state.unit === KIND_UNIT[state.kind]) state.rows[state.kind] = state.value;
-      renderPresets(); refresh();
+    // 환불 탭 − / + 스테퍼와 가운데 숫자칸 직접 입력 (사용 횟수, 0 이상)
+    refundBlock.querySelectorAll(".step").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const kind = btn.dataset.rkind;
+        setUsed(kind, state.used[kind] + Number(btn.dataset.step));
+      });
     });
-    $("c-unit").addEventListener("change", (e) => {
-      state.unit = e.target.value; state.presetId = null;
-      if (state.unit === KIND_UNIT[state.kind]) state.rows[state.kind] = state.value;
-      renderPresets(); refresh();
-    });
-    $("c-sessions").addEventListener("input", (e) => {
-      const v = parseInt(e.target.value, 10);
-      state.sessions = Number.isFinite(v) && v > 0 ? v : 1;
-      state.lastSessions[state.kind] = state.sessions;
-      renderPresets(); refresh();
+    refundBlock.querySelectorAll(".stepnum").forEach((input) => {
+      const kind = input.dataset.rkind;
+      input.addEventListener("focus", () => {
+        if (state.refundKind !== kind) setUsed(kind, state.used[kind]);
+      });
+      input.addEventListener("input", () => {
+        const v = parseInt(input.value, 10);
+        setUsed(kind, Number.isFinite(v) ? v : 0);
+      });
+      input.addEventListener("blur", () => {
+        input.value = state.used[kind];
+      });
     });
 
     dStart.addEventListener("change", refreshDate);
@@ -750,9 +697,8 @@
       e.target.value = digits ? Number(digits).toLocaleString("ko-KR") : "";
       refreshRefund();
     });
-    rUsed.addEventListener("input", refreshRefund);
 
-    copyBtn.addEventListener("click", () => copyText(tab === "date" ? guideText : receiptText));
+    copyBtn.addEventListener("click", () => copyText(receiptText));
 
     $("btn-min").addEventListener("click", () => callWindow("minimize"));
     $("btn-close").addEventListener("click", () => callWindow("close"));
@@ -781,7 +727,7 @@
       const p = PRESETS.find((x) => x.kind === kind);
       if (p) { state.rows[kind] = p.period_value; state.lastSessions[kind] = p.sessions; }
     });
-    renderPresets();
+    renderChips();
     switchTab("date");
     initWindowState();
   }

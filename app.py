@@ -20,8 +20,8 @@ import calculator
 from version import APP_VERSION
 
 WINDOW_TITLE = "필라테스 계산기"
-DEFAULT_SIZE = (380, 600)
-MIN_SIZE = (340, 480)
+DEFAULT_SIZE = (336, 560)
+MIN_SIZE = (310, 500)
 REPO = "hs0522/calculator"
 RELEASES_API = f"https://api.github.com/repos/{REPO}/releases/latest"
 RELEASES_URL = f"https://github.com/{REPO}/releases/latest"
