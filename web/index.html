@@ -23,7 +23,7 @@
   }
   /* ---------- 상단 미니 헤더 (드래그 영역) ---------- */
   .bar{
-    height:42px; display:flex; align-items:center; gap:5px; padding:0 6px 0 12px;
+    height:40px; display:flex; align-items:center; gap:5px; padding:0 6px 0 12px;
     background:transparent; -webkit-app-region:drag;
   }
   .bar h1{
@@ -61,22 +61,21 @@
 
   /* ---------- 본문 ---------- */
   main{
-    height:calc(100% - 42px); padding:2px 12px 11px; display:flex; flex-direction:column;
-    gap:9px; overflow:hidden;
+    height:calc(100% - 40px); padding:0 12px 12px; display:flex; flex-direction:column;
+    gap:8px; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin;
   }
-  main > .result{flex:1 1 0;}
-  main > #membership{flex:1 1 0; display:flex; flex-direction:column;}
+  main > .result, main > #membership{flex:0 0 auto;}
   .card{
-    background:var(--card); border:1px solid var(--line); border-radius:16px;
-    padding:11px 13px; box-shadow:var(--shadow);
+    background:var(--card); border:1px solid var(--line); border-radius:15px;
+    padding:11px 12px; box-shadow:var(--shadow);
   }
-  .card-head{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:8px;}
+  .card-head{display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:7px;}
   .card-title{font-size:12px; font-weight:700; letter-spacing:-.02em; color:var(--ink);}
   .hint{font-size:9.5px; color:var(--danger); font-weight:600;}
   .inline{display:flex; align-items:center; gap:6px;}
   input,select{
-    width:100%; font:inherit; font-size:12px; color:inherit; background:#FBFBFE; border:1px solid #E3E6EE;
-    border-radius:10px; padding:8px 10px; outline:none; transition:border-color .12s,box-shadow .12s,background .12s;
+    width:100%; font:inherit; font-size:11.5px; color:inherit; background:#FBFBFE; border:1px solid #E3E6EE;
+    border-radius:9px; padding:9px; outline:none; transition:border-color .12s,box-shadow .12s,background .12s;
   }
   input:focus,select:focus{border-color:var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(91,95,233,.12);}
   input::placeholder{color:#B4B7C2;}
@@ -89,72 +88,78 @@
   }
   .ghost:hover{background:#E8EAF2; color:var(--ink);}
 
-  /* ---------- 회원권 카드: 두 줄 스테퍼 (만료일=기간 개월·주 / 환불=사용 횟수 회) ---------- */
-  .rows{display:grid; gap:7px; flex:1 1 auto; min-height:0; grid-auto-rows:1fr;}
+  /* ---------- 회원권 카드: 아담한 우측 스테퍼 (만료일=기간 개월·주 / 환불=사용 횟수 회) ---------- */
+  .rows{display:grid; gap:6px; align-content:start;}
   .mrow{
-    border:1px solid #E7E9F0; background:#FAFBFD; border-radius:12px; padding:7px 9px 8px;
+    border:1px solid #E7E9F0; background:#FAFBFD; border-radius:11px; padding:10px 9px 11px;
     display:grid; gap:6px; align-content:center;
     transition:border-color .12s,background .12s,box-shadow .12s;
   }
   .mrow.is-active{border-color:var(--accent); background:var(--accent-tint); box-shadow:0 1px 3px rgba(91,95,233,.16);}
-  .mrow-head{display:flex; align-items:center; gap:6px; min-width:0; min-height:21px;}
-  .mkind{font-size:10.5px; font-weight:700; color:#4A4E5A; letter-spacing:-.01em; white-space:nowrap;}
+  /* 환불 탭: 라벨·회당 단가와 스테퍼가 한 줄에 들어간다 */
+  .mrow.is-line{display:flex; align-items:center; gap:8px; padding:9px;}
+  .mrow-head{display:flex; align-items:center; gap:5px; min-width:0; min-height:20px;}
+  .mrow.is-line .mrow-head{flex:1 1 auto; overflow:hidden;}
+  .mkind{font-size:10px; font-weight:700; color:#4A4E5A; letter-spacing:-.01em; white-space:nowrap;}
   .mrow.is-active .mkind{color:var(--accent-dark);}
-  .mrate{font-size:10px; font-weight:600; color:var(--muted); letter-spacing:-.01em; white-space:nowrap;}
+  .mrate{font-size:9.5px; font-weight:600; color:var(--muted); letter-spacing:-.01em; white-space:nowrap;}
   .mrow.is-active .mrate{color:var(--accent);}
   .chips{display:flex; gap:3px; margin-left:auto;}
   .chip{
-    border:1px solid #E3E6EE; background:#fff; border-radius:999px; padding:2px 7px; font:inherit;
-    font-size:10px; font-weight:600; color:#5A5F6E; cursor:pointer; font-variant-numeric:tabular-nums;
+    border:1px solid #E3E6EE; background:#fff; border-radius:999px; padding:1px 6px; font:inherit;
+    font-size:9.5px; font-weight:600; color:#5A5F6E; cursor:pointer; font-variant-numeric:tabular-nums;
     transition:border-color .12s,color .12s;
   }
   .chip:hover{border-color:#CFD2E0; color:var(--ink);}
   .chip.is-active{border-color:var(--accent); color:var(--accent-dark); font-weight:700;}
-  .stepper{display:flex; align-items:center; gap:6px;}
+  /* 스테퍼는 필요한 폭만 차지하고 오른쪽에 붙는다 */
+  .stepper{display:flex; align-items:center; gap:4px; justify-content:flex-end;}
+  .mrow.is-line .stepper{flex:0 0 auto;}
   .step{
-    width:30px; height:30px; flex:0 0 30px; border:1px solid #E3E6EE; background:#fff; border-radius:10px;
-    font:inherit; font-size:15px; font-weight:600; color:#4A4E5A; line-height:1; padding:0;
+    width:28px; height:28px; flex:0 0 28px; border:1px solid #E3E6EE; background:#fff; border-radius:9px;
+    font:inherit; font-size:14.5px; font-weight:600; color:#4A4E5A; line-height:1; padding:0;
     cursor:pointer; display:grid; place-items:center; transition:background .12s,border-color .12s,color .12s;
   }
   .step:hover{background:#F2F3FA; border-color:#CFD2E0; color:var(--ink);}
   .step:disabled{color:#C9CCD6; cursor:default; background:#F7F8FC; border-color:#EDEFF5;}
-  /* 가운데 입력 박스: 숫자와 단위(개월/주/회)가 한 상자 안에 들어간다 */
+  /* 숫자와 단위(개월/주/회)가 한 상자 안에 들어간다 */
   .numbox{
-    position:relative; flex:1 1 auto; min-width:0; height:30px; display:flex; align-items:center;
-    justify-content:center; gap:4px; padding:0 10px; cursor:text;
-    background:#fff; border:1px solid #E3E6EE; border-radius:10px;
+    position:relative; flex:0 0 62px; height:28px; display:flex; align-items:center;
+    justify-content:center; gap:3px; padding:0 7px; cursor:text;
+    background:#fff; border:1px solid #E3E6EE; border-radius:9px;
     transition:border-color .12s,box-shadow .12s;
   }
   .numbox:hover{border-color:#CFD2E0;}
   .numbox:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px rgba(91,95,233,.12);}
   .numbox .stepnum{
-    width:1.75em; height:100%; border:0; border-radius:8px; background:transparent; outline:none;
-    padding:0; text-align:right; font:inherit; font-size:12.5px; font-weight:700;
+    width:1.7em; height:100%; border:0; border-radius:6px; background:transparent; outline:none;
+    padding:0; text-align:right; font:inherit; font-size:12px; font-weight:700;
     color:var(--ink); font-variant-numeric:tabular-nums;
   }
   .numbox .stepnum:focus{background:transparent; border-color:transparent; box-shadow:none;}
   .numbox .unit{
-    font-size:10px; font-weight:600; color:var(--muted2); letter-spacing:-.01em;
+    font-size:9.5px; font-weight:600; color:var(--muted2); letter-spacing:-.01em;
     pointer-events:none; user-select:none;
   }
 
   /* ---------- 결과 ---------- */
   .result{
-    flex:1; min-height:0; background:var(--card); border:1px solid var(--line); border-radius:16px;
-    padding:12px 13px 13px; display:flex; flex-direction:column; overflow:hidden;
+    flex:0 0 auto; min-height:0; background:var(--card); border:1px solid var(--line); border-radius:15px;
+    padding:13px 12px 14px; display:flex; flex-direction:column; overflow:hidden;
     box-shadow:var(--shadow);
   }
-  .rlabel{margin:0; font-size:10.5px; font-weight:600; color:var(--muted);}
-  .hero{flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:center;}
+  .rlabel{margin:0; font-size:10px; font-weight:600; color:var(--muted);}
+  .hero{min-height:0;}
   .big{
-    margin:4px 0 0; font-size:29px; font-weight:800; line-height:1.08; letter-spacing:-.035em;
+    margin:8px 0 4px; font-size:29px; font-weight:800; line-height:1.1; letter-spacing:-.035em;
     font-variant-numeric:tabular-nums;
   }
   .big.is-empty{color:#C9CCD6;}
-  .sub{margin:4px 0 0; font-size:10.5px; color:var(--muted); min-height:15px;}
+  .sub{margin:3px 0 0; font-size:10px; color:var(--muted);}
+  .sub:empty{display:none;}
   .sub.is-error{color:var(--danger);}
   .kpis{
-    margin:8px 0 8px; display:grid; grid-template-columns:1fr 1fr; gap:6px;
+    margin:5px 0; display:grid; grid-template-columns:1fr 1fr; gap:6px;
     overflow-y:auto; min-height:0; scrollbar-width:thin; align-content:start;
   }
   .kpis:empty{display:none;}
@@ -162,8 +167,8 @@
   .kpis::-webkit-scrollbar-thumb{background:#DFE1EA; border-radius:4px;}
   .kpis.is-single{grid-template-columns:1fr;}
   .kpis.is-three{grid-template-columns:repeat(3,1fr);}
-  .kpi{background:#F4F5FB; border-radius:11px; padding:6px 9px; min-width:0;}
-  .kpis.is-three .kpi{padding:6px 8px;}
+  .kpi{background:#F4F5FB; border-radius:11px; padding:5px 8px; min-width:0;}
+  .kpis.is-three .kpi{padding:5px 8px;}
   .kpi .k{
     display:block; font-size:9px; font-weight:700; color:var(--accent); line-height:1.3;
     letter-spacing:.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -188,8 +193,8 @@
   .copy:hover{background:var(--accent-dark); box-shadow:0 7px 16px rgba(79,70,229,.32);}
   .copy:disabled{background:#E8EAF2; color:#A7AAB5; cursor:default; box-shadow:none;}
   /* 결과 카드 안: 시작일·결제금액 줄 */
-  .startblock{margin-top:10px; padding-top:10px; border-top:1px solid var(--line);}
-  .startlbl{display:block; font-size:10px; font-weight:600; color:var(--label); margin-bottom:8px; letter-spacing:-.01em;}
+  .startblock{margin-top:11px; padding-top:11px; border-top:1px solid var(--line);}
+  .startlbl{display:block; font-size:9.5px; font-weight:600; color:var(--label); margin-bottom:7px; letter-spacing:-.01em;}
 
   .toast{
     position:fixed; left:50%; bottom:14px; transform:translate(-50%,6px); background:#1C1D24; color:#fff;
@@ -197,17 +202,6 @@
     transition:opacity .16s,transform .16s; z-index:9;
   }
   .toast.is-shown{opacity:1; transform:translate(-50%,0);}
-
-  /* 창을 최소 높이까지 줄였을 때 */
-  @media (max-height:520px){
-    main{padding:0 10px 10px; gap:8px; overflow-y:auto;}
-    main > .result, main > #membership{flex:0 0 auto;}
-    .card{padding:10px 11px;}
-    .big{font-size:25px;}
-    .kpis{overflow:visible;}
-    .copy{padding:9px;}
-    .payrow .copy{padding:0 13px;}
-  }
 </style>
 </head>
 <body>
@@ -236,7 +230,7 @@
       <div class="hero">
         <p class="rlabel" id="r-label">만료일</p>
         <p class="big is-empty" id="big">—</p>
-        <p class="sub" id="sub">시작일을 선택하세요</p>
+        <p class="sub" id="sub"></p>
       </div>
       <div class="kpis" id="facts"></div>
       <div class="startblock" id="panel-date">
@@ -291,9 +285,9 @@
         </div>
       </div>
       <div class="rows" id="refund-block" hidden>
-        <div class="mrow" data-rkind="group">
+        <div class="mrow is-line" data-rkind="group">
           <div class="mrow-head">
-            <span class="mkind">6:1 그룹<span class="mrate"> · 회당 22,000원</span></span>
+            <span class="mkind">6:1 그룹</span><span class="mrate">· 회당 22,000원</span>
           </div>
           <div class="stepper">
             <button class="step" type="button" data-rkind="group" data-step="-1" aria-label="그룹 사용 횟수 줄이기">−</button>
@@ -304,9 +298,9 @@
             <button class="step" type="button" data-rkind="group" data-step="1" aria-label="그룹 사용 횟수 늘리기">+</button>
           </div>
         </div>
-        <div class="mrow" data-rkind="personal">
+        <div class="mrow is-line" data-rkind="personal">
           <div class="mrow-head">
-            <span class="mkind">1:1 개인<span class="mrate"> · 회당 77,000원</span></span>
+            <span class="mkind">1:1 개인</span><span class="mrate">· 회당 77,000원</span>
           </div>
           <div class="stepper">
             <button class="step" type="button" data-rkind="personal" data-step="-1" aria-label="개인 사용 횟수 줄이기">−</button>
@@ -324,7 +318,6 @@
 
 <script>
 (function () {
-  const WEEKDAY_FULL = {월:"월요일", 화:"화요일", 수:"수요일", 목:"목요일", 금:"금요일", 토:"토요일", 일:"일요일"};
   const GROUP_RATE = 22000, PERSONAL_RATE = 77000;
 
   const $ = (id) => document.getElementById(id);
@@ -379,7 +372,6 @@
     return {
       label: p ? p.label : kindLabel(state.kind),
       unit: state.unit, value: state.value, sessions: state.sessions,
-      periodText: state.value + unitSymbol(state.unit),
     };
   }
 
@@ -513,7 +505,7 @@
       return;
     }
     setBig(out.expiry, {});
-    setSub((WEEKDAY_FULL[out.expiry_weekday] || "") + " · " + m.periodText);
+    setSub("");
     // 시작일은 위 카드의 날짜 입력 칸에 그대로 보이므로 KPI 박스로 또 반복하지 않는다.
     setFacts([]);
   }
