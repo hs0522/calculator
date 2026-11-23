@@ -187,8 +187,8 @@
   /* 결제금액 입력 줄: 입력 칸 + 복사 버튼을 한 줄에 */
   .payrow{display:flex; align-items:center; gap:6px;}
   .payrow .copy{
-    flex:0 0 auto; width:auto; height:36px; padding:0 13px; border-radius:10px;
-    font-size:11.5px; box-shadow:0 4px 12px rgba(91,95,233,.24);
+    flex:0 0 auto; width:auto; height:36px; padding:0 9px; border-radius:10px;
+    font-size:11px; box-shadow:0 4px 12px rgba(91,95,233,.24);
   }
   .copy:hover{background:var(--accent-dark); box-shadow:0 7px 16px rgba(79,70,229,.32);}
   .copy:disabled{background:#E8EAF2; color:#A7AAB5; cursor:default; box-shadow:none;}
@@ -244,7 +244,7 @@
         <span class="startlbl">결제금액</span>
         <div class="payrow">
           <input id="r-paid" inputmode="numeric" autocomplete="off" placeholder="예: 264,000">
-          <button class="copy" id="copy" type="button" disabled hidden>환불 내역 복사</button>
+          <button class="copy" id="copy" type="button" disabled hidden>복사</button>
         </div>
       </div>
     </section>
@@ -515,7 +515,7 @@
     const used = state.used[state.refundKind];
     const rate = KIND_RATE[state.refundKind];
     labelEl.textContent = "최종 환불금액";
-    copyBtn.textContent = "환불 내역 복사";
+    copyBtn.textContent = "복사";
 
     const digits = rPaid.value.replace(/[^\d]/g, "");
     if (!digits) {
