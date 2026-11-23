@@ -196,9 +196,9 @@
         <span class="hint" id="rate-note"></span>
       </div>
       <div class="presets" id="presets-block">
-        <p class="lbl sec">6:1 그룹 · 회당 <b id="rate-group">22,000원</b></p>
+        <p class="lbl sec">6:1 그룹<span id="rate-group-slot" hidden> · 회당 <b id="rate-group">22,000원</b></span></p>
         <div class="pills" id="pills-group"></div>
-        <p class="lbl sec" style="margin:8px 0 6px;">1:1 개인 · 회당 <b id="rate-personal">77,000원</b></p>
+        <p class="lbl sec" style="margin:8px 0 6px;">1:1 개인<span id="rate-personal-slot" hidden> · 회당 <b id="rate-personal">77,000원</b></span></p>
         <div class="pills three" id="pills-personal"></div>
       </div>
       <div class="foot">
@@ -207,8 +207,8 @@
       </div>
       <div class="custom" id="custom" hidden>
         <select id="c-kind">
-          <option value="group">6:1 그룹 · 회당 22,000원</option>
-          <option value="personal">1:1 개인 · 회당 77,000원</option>
+          <option value="group">6:1 그룹</option>
+          <option value="personal">1:1 개인</option>
         </select>
         <div class="duo">
           <div class="inline">
@@ -273,6 +273,8 @@
   const presetsBlock = $("presets-block");
   const labelEl = $("r-label");
   const rateGroup = $("rate-group"), ratePersonal = $("rate-personal");
+  const rateGroupSlot = $("rate-group-slot"), ratePersonalSlot = $("rate-personal-slot");
+  const kindSel = $("c-kind");
   const rateNote = $("rate-note"), customBox = $("custom"), customToggle = $("custom-toggle");
   const dStart = $("d-start"), rPaid = $("r-paid"), rUsed = $("r-used"), rTotal = $("r-total");
   const bigEl = $("big"), subEl = $("sub"), kpisEl = $("facts"), copyBtn = $("copy"), toastEl = $("toast");
@@ -327,14 +329,24 @@
   function renderPresets() {
     pillsGroup.innerHTML = PRESETS.filter((p) => p.kind === "group").map(pillHtml).join("");
     pillsPersonal.innerHTML = PRESETS.filter((p) => p.kind === "personal").map(pillHtml).join("");
-    // 두 단가를 항상 라벨에 함께 보여준다
     rateGroup.textContent = won(GROUP_RATE);
     ratePersonal.textContent = won(PERSONAL_RATE);
+    syncRateVisibility();
     const m = membership();
+    // 요약 줄은 두 탭 모두 횟수·소진기간만 (정가 금액은 결제금액 입력과 헷갈리므로 표시하지 않는다)
     selNote.textContent = m.custom
-      ? m.periodText + " · " + m.sessions + "회 · 회당 " + won(m.perSession)
-      : m.sessions + "회 · " + m.periodText + (m.price ? " · " + won(m.price) : "");
+      ? m.periodText + " · " + m.sessions + "회"
+      : m.sessions + "회 · " + m.periodText;
     rTotal.textContent = "총 " + m.sessions + "회";
+  }
+
+  // 단가(회당 차감액)는 환불 탭에서만 보여준다. 만료일 탭은 금액 없이 종류만.
+  function syncRateVisibility() {
+    const show = tab === "refund";
+    rateGroupSlot.hidden = !show;
+    ratePersonalSlot.hidden = !show;
+    kindSel.options[0].textContent = "6:1 그룹" + (show ? " · 회당 " + won(GROUP_RATE) : "");
+    kindSel.options[1].textContent = "1:1 개인" + (show ? " · 회당 " + won(PERSONAL_RATE) : "");
   }
 
   function syncCustom() {
@@ -477,6 +489,7 @@
     document.querySelectorAll(".seg-btn").forEach((el) => el.classList.toggle("is-active", el.dataset.tab === next));
     $("panel-date").hidden = next !== "date";
     $("panel-refund").hidden = next !== "refund";
+    syncRateVisibility();
     refresh();
   }
 
