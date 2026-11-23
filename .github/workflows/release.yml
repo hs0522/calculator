@@ -61,7 +61,7 @@ jobs:
           Get-Content "version.py"
 
       - name: Check pywebview import
-        run: python -c "import sys, webview; print('pywebview', webview.__version__, '| python', sys.version)"
+        run: python -c "import sys, importlib.metadata as md, webview; print('pywebview', md.version('pywebview'), '| python', sys.version)"
 
       - name: Build with PyInstaller
         run: >
