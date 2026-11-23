@@ -19,6 +19,23 @@ import webbrowser
 import calculator
 from version import APP_VERSION
 
+
+def _ensure_std_streams() -> None:
+    """--windowed(PyInstaller) 빌드에서는 sys.stdout/stderr 가 None 이라 print 가 예외로 죽는다.
+    그 예외가 창 모드에서 오류 대화상자로 떠서 자동 검증이 멈추므로, 리다이렉트된 fd 가
+    있으면 그대로 쓰고 없으면 devnull 로 채운다."""
+    for name, fd in (("stdout", 1), ("stderr", 2)):
+        if getattr(sys, name) is not None:
+            continue
+        try:
+            stream = open(fd, "w", encoding="utf-8", errors="replace", closefd=False)
+        except OSError:
+            stream = open(os.devnull, "w", encoding="utf-8")
+        setattr(sys, name, stream)
+
+
+_ensure_std_streams()
+
 WINDOW_TITLE = "필라테스 계산기"
 DEFAULT_SIZE = (336, 456)
 MIN_SIZE = (310, 440)
