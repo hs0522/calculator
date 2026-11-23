@@ -137,11 +137,25 @@
   }
   .step:hover{background:#F2F3FA; border-color:#CFD2E0; color:var(--ink);}
   .step:disabled{color:#C9CCD6; cursor:default; background:#F7F8FC; border-color:#EDEFF5;}
-  .stepnum{
-    width:58px; flex:0 0 58px; text-align:center; padding:6px 4px; font-weight:700;
-    background:#fff; font-variant-numeric:tabular-nums;
+  /* 가운데 입력 박스: 숫자와 단위(개월/주)가 한 상자 안에 들어간다 */
+  .numbox{
+    position:relative; flex:1 1 auto; min-width:0; height:30px; display:flex; align-items:center;
+    justify-content:center; gap:4px; padding:0 10px; cursor:text;
+    background:#fff; border:1px solid #E3E6EE; border-radius:10px;
+    transition:border-color .12s,box-shadow .12s;
   }
-  .stepunit{font-size:10.5px; color:var(--label); margin-left:auto; padding-right:2px;}
+  .numbox:hover{border-color:#CFD2E0;}
+  .numbox:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px rgba(91,95,233,.12);}
+  .numbox .stepnum{
+    width:1.75em; height:100%; border:0; border-radius:8px; background:transparent; outline:none;
+    padding:0; text-align:right; font:inherit; font-size:12.5px; font-weight:700;
+    color:var(--ink); font-variant-numeric:tabular-nums;
+  }
+  .numbox .stepnum:focus{background:transparent; border-color:transparent; box-shadow:none;}
+  .numbox .unit{
+    font-size:10px; font-weight:600; color:var(--muted2); letter-spacing:-.01em;
+    pointer-events:none; user-select:none;
+  }
 
   /* ---------- 결과 ---------- */
   .result{
@@ -162,6 +176,7 @@
     margin:9px 0 9px; display:grid; grid-template-columns:1fr 1fr; gap:6px;
     overflow-y:auto; min-height:0; scrollbar-width:thin; align-content:start;
   }
+  .kpis:empty{display:none;}
   .kpis::-webkit-scrollbar{width:4px;}
   .kpis::-webkit-scrollbar-thumb{background:#DFE1EA; border-radius:4px;}
   .kpis.is-single{grid-template-columns:1fr;}
@@ -182,6 +197,17 @@
   }
   .copy:hover{background:var(--accent-dark); box-shadow:0 7px 16px rgba(79,70,229,.32);}
   .copy:disabled{background:#E8EAF2; color:#A7AAB5; cursor:default; box-shadow:none;}
+  /* 결과 카드 안: 시작일 줄 */
+  .startblock{margin-top:10px; padding-top:10px; border-top:1px solid var(--line);}
+  .startlbl{display:block; font-size:10px; font-weight:600; color:var(--label); margin-bottom:6px; letter-spacing:-.01em;}
+
+  /* 탭별 카드 순서 — 만료일: 결과 카드가 맨 위 / 환불: 회원권 → 결제금액 → 결과 */
+  main.is-date #result-panel{order:1;}
+  main.is-date #membership{order:2;}
+  main.is-refund #membership{order:1;}
+  main.is-refund #panel-refund{order:2;}
+  main.is-refund #result-panel{order:3;}
+
   .toast{
     position:fixed; left:50%; bottom:14px; transform:translate(-50%,6px); background:#1C1D24; color:#fff;
     font-size:10.5px; font-weight:600; padding:7px 13px; border-radius:999px; opacity:0; pointer-events:none;
@@ -222,8 +248,25 @@
     </div>
   </header>
 
-  <main>
-    <section class="card">
+  <main id="main" class="is-date">
+    <section class="result" id="result-panel">
+      <div class="hero">
+        <p class="rlabel" id="r-label">만료일</p>
+        <p class="big is-empty" id="big">—</p>
+        <p class="sub" id="sub">시작일을 선택하세요</p>
+      </div>
+      <div class="startblock" id="panel-date">
+        <span class="startlbl">시작일</span>
+        <div class="inline">
+          <input id="d-start" type="date">
+          <button class="ghost" id="d-today" type="button">오늘</button>
+        </div>
+      </div>
+      <div class="kpis" id="facts"></div>
+      <button class="copy" id="copy" type="button" disabled>안내 문구 복사</button>
+    </section>
+
+    <section class="card" id="membership">
       <div class="card-head">
         <span class="card-title">회원권</span>
         <span class="hint" id="rate-note"></span>
@@ -236,9 +279,11 @@
           </div>
           <div class="stepper">
             <button class="step" type="button" data-kind="group" data-step="-1" aria-label="그룹 기간 줄이기">−</button>
-            <input class="stepnum" id="num-group" data-kind="group" type="number" min="1" step="1" inputmode="numeric" value="2" aria-label="그룹 기간">
+            <label class="numbox">
+              <input class="stepnum" id="num-group" data-kind="group" type="number" min="1" max="99" step="1" inputmode="numeric" value="2" aria-label="그룹 기간(개월)">
+              <span class="unit">개월</span>
+            </label>
             <button class="step" type="button" data-kind="group" data-step="1" aria-label="그룹 기간 늘리기">+</button>
-            <span class="stepunit">개월</span>
           </div>
         </div>
         <div class="mrow" data-kind="personal">
@@ -248,9 +293,11 @@
           </div>
           <div class="stepper">
             <button class="step" type="button" data-kind="personal" data-step="-1" aria-label="개인 기간 줄이기">−</button>
-            <input class="stepnum" id="num-personal" data-kind="personal" type="number" min="1" step="1" inputmode="numeric" value="10" aria-label="개인 기간">
+            <label class="numbox">
+              <input class="stepnum" id="num-personal" data-kind="personal" type="number" min="1" max="99" step="1" inputmode="numeric" value="10" aria-label="개인 기간(주)">
+              <span class="unit">주</span>
+            </label>
             <button class="step" type="button" data-kind="personal" data-step="1" aria-label="개인 기간 늘리기">+</button>
-            <span class="stepunit">주</span>
           </div>
         </div>
       </div>
@@ -282,16 +329,6 @@
       </div>
     </section>
 
-    <section class="card" id="panel-date">
-      <div class="card-head">
-        <span class="card-title">시작일</span>
-      </div>
-      <div class="inline">
-        <input id="d-start" type="date">
-        <button class="ghost" id="d-today" type="button">오늘</button>
-      </div>
-    </section>
-
     <section class="card" id="panel-refund" hidden>
       <div class="card-head">
         <span class="card-title">결제금액 · 사용 횟수</span>
@@ -307,16 +344,6 @@
           <span class="suffix">회</span>
         </div>
       </div>
-    </section>
-
-    <section class="result">
-      <div class="hero">
-        <p class="rlabel" id="r-label">만료일</p>
-        <p class="big is-empty" id="big">—</p>
-        <p class="sub" id="sub">시작일을 선택하세요</p>
-      </div>
-      <div class="kpis" id="facts"></div>
-      <button class="copy" id="copy" type="button" disabled>안내 문구 복사</button>
     </section>
   </main>
   <div class="toast" id="toast">복사했습니다</div>
@@ -423,7 +450,7 @@
       row.classList.toggle("is-active", active);
       const num = row.querySelector(".stepnum");
       if (document.activeElement !== num) num.value = value;
-      row.querySelector(".stepunit").textContent = unitSymbol(active ? state.unit : KIND_UNIT[kind]);
+      row.querySelector(".numbox .unit").textContent = unitSymbol(active ? state.unit : KIND_UNIT[kind]);
       row.querySelector('[data-step="-1"]').disabled = value <= 1;
     });
   }
@@ -546,9 +573,8 @@
     }
     setBig(out.expiry, {});
     setSub((WEEKDAY_FULL[out.expiry_weekday] || "") + " · " + m.periodText);
-    setFacts([
-      {k: "시작일", v: out.start_text}
-    ]);
+    // 시작일은 위 카드의 날짜 입력 칸에 그대로 보이므로 KPI 박스로 또 반복하지 않는다.
+    setFacts([]);
     guideText = out.guide_text;
     copyBtn.disabled = false;
   }
@@ -618,6 +644,9 @@
 
   function switchTab(next) {
     tab = next;
+    const mainEl = $("main");
+    mainEl.classList.toggle("is-date", next === "date");
+    mainEl.classList.toggle("is-refund", next === "refund");
     document.querySelectorAll(".seg-btn").forEach((el) => el.classList.toggle("is-active", el.dataset.tab === next));
     $("panel-date").hidden = next !== "date";
     $("panel-refund").hidden = next !== "refund";
